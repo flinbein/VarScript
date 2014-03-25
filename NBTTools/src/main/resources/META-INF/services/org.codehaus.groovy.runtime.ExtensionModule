@@ -1,0 +1,3 @@
+moduleName=nbt-module
+moduleVersion=1.0-test
+extensionClasses=ru.dpohvar.varscript.groovy.extension.NBTExtension
