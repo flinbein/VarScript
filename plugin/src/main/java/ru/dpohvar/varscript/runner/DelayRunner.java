@@ -1,9 +1,6 @@
 package ru.dpohvar.varscript.runner;
 
-/**
- * Created by DPOH-VAR on 05.03.14
- */
-public class DelayRunner extends Thread implements Runner{
+public class DelayRunner extends Thread implements Runner {
 
     private final Runnable runnable;
     private final long delay;
@@ -16,7 +13,7 @@ public class DelayRunner extends Thread implements Runner{
     }
 
     @Override
-    public boolean stopRunner(){
+    public boolean stopRunner() {
         synchronized (this) {
             if (!this.running) return false;
             this.running = true;

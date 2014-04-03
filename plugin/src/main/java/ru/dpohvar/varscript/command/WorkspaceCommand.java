@@ -12,14 +12,15 @@ import java.util.List;
 import java.util.Set;
 
 import static org.bukkit.ChatColor.*;
+
 /**
- * Created by DPOH-VAR on 24.02.14
+ * Executor of command /workspace
  */
 public class WorkspaceCommand implements CommandExecutor {
 
     private WorkspaceManager manager;
 
-    public WorkspaceCommand(WorkspaceManager manager){
+    public WorkspaceCommand(WorkspaceManager manager) {
         this.manager = manager;
     }
 
@@ -38,13 +39,13 @@ public class WorkspaceCommand implements CommandExecutor {
             String wsName, user = commandSender.getName();
             if (strings.length < 2) return false;
             wsName = strings[1];
-            if (strings.length > 2 ) user = strings[2];
-            return setWorkspace(commandSender,manager,wsName, user);
+            if (strings.length > 2) user = strings[2];
+            return setWorkspace(commandSender, manager, wsName, user);
         } else if (action.equalsIgnoreCase("set-default")) {
             String wsName, user = commandSender.getName();
             if (strings.length < 2) return false;
             wsName = strings[1];
-            if (strings.length > 2 ) user = strings[2];
+            if (strings.length > 2) user = strings[2];
             return setDefaultWorkspace(commandSender, manager, wsName, user);
         } else if (action.equalsIgnoreCase("stop")) {
             String wsName = null;
@@ -184,7 +185,7 @@ public class WorkspaceCommand implements CommandExecutor {
     }
 
     public static boolean setWorkspace(CommandSender commandSender, WorkspaceManager manager, String wsName, String user) {
-        if (user==null || user.isEmpty()) user = commandSender.getName();
+        if (user == null || user.isEmpty()) user = commandSender.getName();
         manager.setWorkspaceName(user, wsName);
         boolean loaded = manager.isWorkspaceLoaded(wsName);
         commandSender.sendMessage(
@@ -195,7 +196,7 @@ public class WorkspaceCommand implements CommandExecutor {
     }
 
     public static boolean setDefaultWorkspace(CommandSender commandSender, WorkspaceManager manager, String wsName, String user) {
-        if (user==null || user.isEmpty()) user = commandSender.getName();
+        if (user == null || user.isEmpty()) user = commandSender.getName();
         manager.setDefaultWorkspaceName(user, wsName);
         boolean loaded = manager.isWorkspaceLoaded(wsName);
         commandSender.sendMessage(
@@ -212,9 +213,9 @@ public class WorkspaceCommand implements CommandExecutor {
         readyWorkspaces.removeAll(workspaces);
         builder.append(VarScriptPlugin.prefix).append("\nloaded workspaces:").append(GREEN);
         if (workspaces.isEmpty()) builder.append(GRAY).append(" none\n");
-        for (String ws: workspaces) if (ws.contains(pattern)) builder.append('\n').append(ws);
+        for (String ws : workspaces) if (ws.contains(pattern)) builder.append('\n').append(ws);
         if (!readyWorkspaces.isEmpty()) builder.append(RESET).append("\nunloaded workspaces:").append(GRAY);
-        for (String ws: readyWorkspaces) if (ws.contains(pattern)) builder.append('\n').append(ws);
+        for (String ws : readyWorkspaces) if (ws.contains(pattern)) builder.append('\n').append(ws);
         commandSender.sendMessage(builder.toString());
         return true;
     }

@@ -1,21 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="FacetManager">
-    <facet type="JRebel" name="JRebel">
-      <configuration>
-        <option name="autosync" value="false" />
-        <option name="deleteUnindexed" value="true" />
-        <option name="manualXML" value="false" />
-        <option name="masterModuleName" />
-        <option name="remotingEnabled" value="false" />
-        <option name="scanAllFiles" value="false" />
-        <option name="secure" value="true" />
-        <option name="url" />
-        <option name="xmlDir" />
-      </configuration>
-    </facet>
-  </component>
-  <component name="NewModuleRootManager" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -26,9 +11,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="groovy-2.2.1" level="application" />
-    <orderEntry type="library" name="Maven: org.bukkit:bukkit:1.6.4-R2.0" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.bukkit:craftbukkit:1.6.4-R2.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.bukkit:bukkit:1.7.2-R0.3" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.bukkit:craftbukkit:1.7.2-R0.3" level="project" />
   </component>
 </module>
 

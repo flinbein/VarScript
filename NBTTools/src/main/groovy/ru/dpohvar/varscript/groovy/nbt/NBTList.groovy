@@ -1,9 +1,7 @@
 package ru.dpohvar.varscript.groovy.nbt
 
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode;
-
-import java.util.*;
+import groovy.transform.TypeCheckingMode
 
 /**
  * Created by DPOH-VAR on 15.01.14
@@ -14,9 +12,9 @@ import java.util.*;
 public class NBTList implements List<Object> {
 
     private final List<Object> handleList
-    private final Object handle
+    final Object handle
 
-    public static NBTList forNBT(Object tag){
+    public static NBTList forNBT(Object tag) {
         return new NBTList(tag, false)
     }
 
@@ -36,26 +34,26 @@ public class NBTList implements List<Object> {
     }
 
     @Override
-    public boolean equals(Object t){
+    public boolean equals(Object t) {
         return t instanceof NBTList && handle.equals(((NBTList) t).handle);
     }
 
-    public List<Object> getHandleList(){
+    public List<Object> getHandleList() {
         return handleList;
     }
 
-    public Object getHandle(){
+    public Object getHandle() {
         return handle;
     }
 
     @CompileStatic(TypeCheckingMode.SKIP)
-    public byte getType(){
+    public byte getType() {
         if (handleList.empty) return 0
         else return handle.@type
     }
 
     @CompileStatic(TypeCheckingMode.SKIP)
-    private void setType(byte type){
+    private void setType(byte type) {
         handle.@type = type
     }
 
@@ -80,8 +78,9 @@ public class NBTList implements List<Object> {
     }
 
     @Override
-    public NBTList clone(){
-        return forNBT( handle.clone() )
+    @CompileStatic(TypeCheckingMode.SKIP)
+    public NBTList clone() {
+        return forNBT(handle.clone())
     }
 
     @Override
@@ -109,8 +108,8 @@ public class NBTList implements List<Object> {
     @SuppressWarnings("NullableProblems")
     public Object[] toArray() {
         Object[] result = new Object[size()]
-        int i=0
-        for (Object t: this) result[i++] = t
+        int i = 0
+        for (Object t : this) result[i++] = t
         return result
     }
 
@@ -119,7 +118,7 @@ public class NBTList implements List<Object> {
     public <T> T[] toArray(T[] a) {
         int size = size()
         if (size > a.length) size = a.length
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             a[i] = (T) get(i)
         }
         return a
@@ -137,9 +136,9 @@ public class NBTList implements List<Object> {
     }
 
     @Override
-    public boolean containsAll( Collection<?> c) {
+    public boolean containsAll(Collection<?> c) {
         def e = c.find {
-            ! handleList.contains( NBTUtils.createTag(it) )
+            !handleList.contains(NBTUtils.createTag(it))
         }
         e == null
     }
@@ -148,15 +147,15 @@ public class NBTList implements List<Object> {
     @Override
     public boolean addAll(Collection<?> c) {
         boolean modified = false
-        for (Object t: c) {
-            modified |=  handleList.add(convertToListType(t));
+        for (Object t : c) {
+            modified |= handleList.add(convertToListType(t));
         }
         return modified;
     }
 
     @Override
-    public boolean addAll(int index,@SuppressWarnings("NullableProblems") Collection<?> c) {
-        for (Object t: c) {
+    public boolean addAll(int index, @SuppressWarnings("NullableProblems") Collection<?> c) {
+        for (Object t : c) {
             Object tag = NBTUtils.createTag t;
             handleList.add index++, convertToListType(t)
         }
@@ -166,7 +165,7 @@ public class NBTList implements List<Object> {
     @Override
     public boolean removeAll(@SuppressWarnings("NullableProblems") Collection<?> c) {
         boolean modified = false;
-        for (Object t: c) {
+        for (Object t : c) {
             modified |= handleList.remove(convertToListType(t));
         }
         return modified;
@@ -240,14 +239,14 @@ public class NBTList implements List<Object> {
     @Override
     @SuppressWarnings("NullableProblems")
     public NBTSubList subList(int fromIndex, int toIndex) {
-        return new NBTSubList(this,fromIndex,toIndex);
+        return new NBTSubList(this, fromIndex, toIndex);
     }
 
-    public class NBTIterator implements ListIterator<Object>{
+    public class NBTIterator implements ListIterator<Object> {
 
         protected ListIterator<Object> iterator;
 
-        private NBTIterator(ListIterator<Object> iterator) {
+        public NBTIterator(ListIterator<Object> iterator) {
             this.iterator = iterator;
         }
 
@@ -304,7 +303,7 @@ public class NBTList implements List<Object> {
         private final int offset;
         private int size;
 
-        private NBTSubList(NBTList list, int fromIndex, int toIndex) {
+        public NBTSubList(NBTList list, int fromIndex, int toIndex) {
             this.list = list;
             this.offset = fromIndex;
             size = toIndex - fromIndex;
@@ -316,13 +315,13 @@ public class NBTList implements List<Object> {
         @Override
         public Object set(int index, Object element) {
             rangeCheck index
-            list.set index+offset, element
+            list.set index + offset, element
         }
 
         @Override
         public Object get(int index) {
             rangeCheck index
-            list.get index+offset
+            list.get index + offset
         }
 
         @Override
@@ -341,7 +340,7 @@ public class NBTList implements List<Object> {
         @CompileStatic(TypeCheckingMode.SKIP)
         public Object remove(int index) {
             rangeCheck index
-            list.remove index+offset
+            list.remove index + offset
         }
 
         @Override
@@ -353,8 +352,8 @@ public class NBTList implements List<Object> {
         public boolean addAll(int index, Collection<?> c) {
             rangeCheckForAdd index
             int cSize = c.size()
-            if (cSize==0) return false
-            list.addAll offset+index, c
+            if (cSize == 0) return false
+            list.addAll offset + index, c
             size += cSize
             return true
         }
@@ -370,7 +369,7 @@ public class NBTList implements List<Object> {
         public NBTIterator listIterator(final int index) {
             rangeCheckForAdd index
 
-            return new NBTIterator(list.listIterator(index+offset)) {
+            return new NBTIterator(list.listIterator(index + offset)) {
 
                 @Override
                 public boolean hasNext() {
@@ -447,12 +446,12 @@ public class NBTList implements List<Object> {
     @Override
     public String toString() {
         NBTIterator itr = iterator()
-        if (! itr.hasNext()) return '[]'
+        if (!itr.hasNext()) return '[]'
         StringBuilder sb = new StringBuilder()
         sb << '['
-        for (;;) {
+        for (; ;) {
             sb << itr.next()
-            if (! itr.hasNext()) return sb << ']' as String
+            if (!itr.hasNext()) return sb << ']' as String
             sb << ', '
         }
     }

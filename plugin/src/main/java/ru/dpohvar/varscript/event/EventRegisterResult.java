@@ -1,12 +1,11 @@
 package ru.dpohvar.varscript.event;
 
-import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.RegisteredListener;
 
 /**
- * Created by DPOH-VAR on 27.02.14
+ * Contains all information about registered event
  */
 public class EventRegisterResult {
     public final HandlerList handlerList;

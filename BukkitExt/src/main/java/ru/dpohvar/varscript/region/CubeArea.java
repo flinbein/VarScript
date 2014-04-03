@@ -7,12 +7,6 @@ import org.bukkit.block.Block;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: DPOH-VAR
- * Date: 21.06.12
- * Time: 11:58
- */
 public class CubeArea extends Region {
     protected double x1, z1;
     protected double x2, z2;

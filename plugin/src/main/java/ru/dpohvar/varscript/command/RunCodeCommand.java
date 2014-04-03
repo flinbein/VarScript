@@ -14,18 +14,18 @@ import ru.dpohvar.varscript.writer.CommandSenderWriter;
 import javax.script.ScriptException;
 import java.io.PrintWriter;
 
-import static org.bukkit.ChatColor.*;
-import static ru.dpohvar.varscript.VarScriptPlugin.plugin;
-import static ru.dpohvar.varscript.VarScriptPlugin.prefix;
-import static ru.dpohvar.varscript.VarScriptPlugin.errorPrefix;
+import static org.bukkit.ChatColor.RED;
+import static org.bukkit.ChatColor.RESET;
+import static ru.dpohvar.varscript.VarScriptPlugin.*;
+
 /**
- * Created by DPOH-VAR on 24.02.14
+ * Executor of command /code
  */
 public class RunCodeCommand implements CommandExecutor {
 
     private WorkspaceManager manager;
 
-    public RunCodeCommand(WorkspaceManager manager){
+    public RunCodeCommand(WorkspaceManager manager) {
         this.manager = manager;
     }
 
@@ -34,15 +34,15 @@ public class RunCodeCommand implements CommandExecutor {
         if (strings.length < 2) return false;
         String lang = strings[0];
         StringBuilder builder = new StringBuilder();
-        for (int i=1; i<strings.length-1; i++) {
+        for (int i = 1; i < strings.length - 1; i++) {
             builder.append(strings[i]).append(" ");
         }
-        builder.append(strings[strings.length-1]);
+        builder.append(strings[strings.length - 1]);
         try {
-            Object result = execute(manager, commandSender, builder.toString(), lang );
+            Object result = execute(manager, commandSender, builder.toString(), lang);
             sendResult(commandSender, result);
         } catch (Throwable e) {
-            sendException(commandSender,e);
+            sendException(commandSender, e);
         }
         return true;
     }
@@ -50,9 +50,9 @@ public class RunCodeCommand implements CommandExecutor {
     public static Object execute(WorkspaceManager manager, Object sender, String script, String lang) throws Throwable {
         String wsName = manager.getWorkspaceName(sender);
         Workspace ws = manager.getWorkspace(wsName);
-        if (ws == null) throw new PrintTextException("can not load workspace "+ChatColor.GRAY+wsName);
-        if (sender instanceof BlockCommandSender) sender = ((BlockCommandSender)sender).getBlock();
-        return ws.runScript(sender,script,lang);
+        if (ws == null) throw new PrintTextException("can not load workspace " + ChatColor.GRAY + wsName);
+        if (sender instanceof BlockCommandSender) sender = ((BlockCommandSender) sender).getBlock();
+        return ws.runScript(sender, script, lang);
     }
 
     public static void sendResult(CommandSender sender, Object result) {
@@ -83,7 +83,7 @@ public class RunCodeCommand implements CommandExecutor {
         if (message == null) message = e.getMessage();
         if (message == null) message = e.toString();
         if (plugin.isDebug()) e.printStackTrace();
-        for (;;) {
+        for (; ; ) {
             if (e.getCause() == null) break;
             if (e instanceof ScriptException) e = e.getCause();
         }

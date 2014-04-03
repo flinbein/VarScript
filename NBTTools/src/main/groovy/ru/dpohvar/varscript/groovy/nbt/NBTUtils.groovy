@@ -2,6 +2,7 @@ package ru.dpohvar.varscript.groovy.nbt
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
+
 import static ru.dpohvar.varscript.utils.ReflectionUtils.*
 
 /**
@@ -24,20 +25,21 @@ class NBTUtils {
     public static RefClass rcNBTTagString = getRefClass "{nms}.NBTTagString", "net.minecraft.nbt.NBTTagString"
     public static RefClass rcNBTTagCompound = getRefClass "{nms}.NBTTagCompound", "net.minecraft.nbt.NBTTagCompound"
     public static RefClass rcNBTTagList = getRefClass "{nms}.NBTTagList", "net.minecraft.nbt.NBTTagList"
-    public static RefClass rcNBTCompressedStreamTools = getRefClass "{nms}.NBTCompressedStreamTools", "net.minecraft.nbt.NBTCompressedStreamTools"
+    public
+    static RefClass rcNBTCompressedStreamTools = getRefClass "{nms}.NBTCompressedStreamTools", "net.minecraft.nbt.NBTCompressedStreamTools"
     public static RefClass rcCraftItemStack = getRefClass "{cb}.inventory.CraftItemStack"
-    
+
     public static RefConstructor conNBTTagByte = rcNBTTagByte.getConstructor byte
     public static RefConstructor conNBTTagShort = rcNBTTagShort.getConstructor short
     public static RefConstructor conNBTTagInt = rcNBTTagInt.getConstructor int
     public static RefConstructor conNBTTagLong = rcNBTTagLong.getConstructor long
     public static RefConstructor conNBTTagFloat = rcNBTTagFloat.getConstructor float
     public static RefConstructor conNBTTagDouble = rcNBTTagDouble.getConstructor double
-    public static RefConstructor conNBTTagByteArray = rcNBTTagByteArray.getConstructor ((byte[]))
+    public static RefConstructor conNBTTagByteArray = rcNBTTagByteArray.getConstructor((byte[]))
     public static RefConstructor conNBTTagString = rcNBTTagString.getConstructor String
-    public static RefConstructor conNBTTagIntArray = rcNBTTagIntArray.getConstructor ((int[]))
-    public static RefConstructor conNBTTagCompound = rcNBTTagCompound.getConstructor ()
-    public static RefConstructor conNBTTagList = rcNBTTagList.getConstructor ()
+    public static RefConstructor conNBTTagIntArray = rcNBTTagIntArray.getConstructor((int[]))
+    public static RefConstructor conNBTTagCompound = rcNBTTagCompound.getConstructor()
+    public static RefConstructor conNBTTagList = rcNBTTagList.getConstructor()
 
     public static RefField fieldNBTTagCompoundMap = rcNBTTagCompound.findField Map
     public static RefField fieldNBTTagListList = rcNBTTagList.findField List
@@ -46,12 +48,12 @@ class NBTUtils {
 
     @CompileStatic(TypeCheckingMode.SKIP)
     public static Object getValue(Object tag) {
-        if (tag==null) return null;
-        switch (tag.typeId as int){
+        if (tag == null) return null;
+        switch (tag.typeId as int) {
             case 1..8: case 11: return tag.@data
             case 9: return NBTList.forNBT(tag)
             case 10: return NBTCompound.forNBT(tag)
-            default: throw new RuntimeException("unexpected tag: "+tag.getClass())
+            default: throw new RuntimeException("unexpected tag: " + tag.getClass())
         }
     }
 
@@ -60,7 +62,7 @@ class NBTUtils {
             case null: return null
             case Map: return new NBTCompound(javaObject as Map).getHandle()
             case Collection: return new NBTList(javaObject as Collection).getHandle()
-            case Boolean: return conNBTTagByte.create((javaObject?1:0) as byte)
+            case Boolean: return conNBTTagByte.create((javaObject ? 1 : 0) as byte)
             case Byte: return conNBTTagByte.create(javaObject as byte)
             case Short: return conNBTTagShort.create(javaObject)
             case Integer: return conNBTTagInt.create(javaObject)

@@ -4,9 +4,14 @@ import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 
 /**
- * Created by DPOH-VAR on 26.02.14
+ * Handler for Bukkit event
  */
 public interface EventHandler<T extends Event> extends Listener {
 
+    /**
+     * Method for handling event
+     *
+     * @param event Bukkit event
+     */
     public void handle(T event);
 }

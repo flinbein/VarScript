@@ -1,9 +1,9 @@
 package ru.dpohvar.varscript.exception;
 
 /**
- * Created by DPOH-VAR on 024 24.03.2014
+ * This exception this exception will be printed for player as raw text
  */
-public class PrintTextException extends RuntimeException{
+public class PrintTextException extends RuntimeException {
     public PrintTextException(String message) {
         super(message);
     }

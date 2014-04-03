@@ -7,6 +7,7 @@
     <groupId>ru.dpohvar.varscript</groupId>
     <artifactId>VarScript</artifactId>
     <version>0.6.3</version>
+    <packaging>jar</packaging>
 
     <repositories>
 
@@ -14,6 +15,9 @@
         <repository>
             <id>bukkit-repo</id>
             <url>http://repo.bukkit.org/content/groups/public/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
 
     </repositories>
@@ -23,17 +27,47 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.6.4-R2.0</version>
+            <version>1.7.2-R0.3</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>craftbukkit</artifactId>
-            <version>1.6.4-R2.0</version>
-            <scope>provided</scope>
+            <version>1.7.2-R0.3</version>
+            <scope>runtime</scope>
         </dependency>
 
     </dependencies>
 
-    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <finalName>VarScript</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <configuration>
+                    <show>public</show>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+
 </project>

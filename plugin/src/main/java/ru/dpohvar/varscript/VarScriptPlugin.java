@@ -18,10 +18,13 @@ import java.util.*;
 
 import static ru.dpohvar.varscript.utils.ReflectionUtils.*;
 
+/**
+ * VarScript plugin
+ */
 public class VarScriptPlugin extends JavaPlugin {
 
     /**
-     * plugin instance
+     * VarScript plugin instance
      */
     public static VarScriptPlugin plugin;
 
@@ -35,12 +38,12 @@ public class VarScriptPlugin extends JavaPlugin {
     private WorkspaceManager workspaceManager;
 
     /**
-     * get global server bindings\n
-     * it contains variables:\n
-     * server - current server\n
-     * workspaceManager - {@link #getWorkspaceManager()}\n
-     * pluginManager - {@link org.bukkit.Server#getPluginManager()}\n
-     * classLoader - {@link #getLibClassLoader()}
+     * get global server bindings<br/>
+     * it contains variables:<br/>
+     * <b>server</b> - current server<br/>
+     * <b>workspaceManager</b> - {@link #getWorkspaceManager()}<br/>
+     * <b>pluginManager</b> - {@link org.bukkit.Server#getPluginManager()}<br/>
+     * <b>classLoader</b> - {@link #getLibClassLoader()}
      * @return bindings
      */
     public ServerBindings getServerBindings(){
@@ -48,7 +51,7 @@ public class VarScriptPlugin extends JavaPlugin {
     }
 
     /**
-     * get global constant bindings\n
+     * get global constant bindings<br/>
      * it can be changed by {@link Workspace#putGlobal(String, Object)}
      * @return bindings
      */
@@ -110,8 +113,8 @@ public class VarScriptPlugin extends JavaPlugin {
     }
 
     /**
-     * get debug mode\n
-     * in this mode all exceptions will be printed to console
+     * get debug mode<br/>
+     * in this mode all exceptions will be printed to console<br/>
      * see key "debug" in config.yml
      * @return debug mode
      */
@@ -120,8 +123,8 @@ public class VarScriptPlugin extends JavaPlugin {
     }
 
     /**
-     * get debug-to-sender mode\n
-     * in this mode exceptions will be fully printed to command sender
+     * get debug-to-sender mode<br/>
+     * in this mode exceptions will be fully printed to command sender<br/>
      * see key "print-stack-trace-to-sender" in config.yml
      * @return debug-to-sender mode
      */
@@ -165,7 +168,7 @@ public class VarScriptPlugin extends JavaPlugin {
             try{
                 engine = factory.getScriptEngine();
                 if (factory.getLanguageName().equals("Scala")) {
-                    engine = ScalaOptimizer.modify(engine, loader);
+                    engine = ScalaOptimizer.modify(engine);
                 }
             } catch (Throwable e) {
                 getLogger().warning("can not load "+factory.getEngineName());
@@ -204,9 +207,9 @@ public class VarScriptPlugin extends JavaPlugin {
         getCommand("script").setExecutor(new RunScriptCommand(workspaceManager));
         getCommand("code").setExecutor(new RunCodeCommand(workspaceManager));
 
-        getCommand("python>").setExecutor(new NamedEngineCommand(workspaceManager,"python"));
-        getCommand("javascript>").setExecutor(new NamedEngineCommand(workspaceManager,"ECMAScript"));
-        getCommand("groovy>").setExecutor(new NamedEngineCommand(workspaceManager,"Groovy"));
+        getCommand("python>").setExecutor(new RunCodeWithEngineCommand(workspaceManager, "python"));
+        getCommand("javascript>").setExecutor(new RunCodeWithEngineCommand(workspaceManager, "ECMAScript"));
+        getCommand("groovy>").setExecutor(new RunCodeWithEngineCommand(workspaceManager, "Groovy"));
 
         workspaceManager.loadAllWorkspaces();
     }

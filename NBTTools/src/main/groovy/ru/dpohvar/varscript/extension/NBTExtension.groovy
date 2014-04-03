@@ -1,11 +1,10 @@
-package ru.dpohvar.varscript.groovy.extension
+package ru.dpohvar.varscript.extension
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.block.Block
-import org.bukkit.craftbukkit.v1_7_R1.inventory.CraftItemStack
 import org.bukkit.entity.Entity
 import org.bukkit.inventory.ItemStack
 import ru.dpohvar.varscript.groovy.nbt.NBTCompound
@@ -17,9 +16,11 @@ import ru.dpohvar.varscript.groovy.nbt.NBTUtils
 @CompileStatic
 class NBTExtension {
 
+    static def conCompound = NBTUtils.rcNBTTagCompound.getConstructor()
+
     @CompileStatic(TypeCheckingMode.SKIP)
     public static NBTCompound getNbt(Entity self) {
-        def basic = NBTUtils.classNBTTagCompound.newInstance()
+        def basic = conCompound.create()
         self.handle.e basic
         NBTCompound.forNBT basic
     }
@@ -50,7 +51,7 @@ class NBTExtension {
         result
     }
 
-    public static<T extends Entity> T nbt(T self, Map val) {
+    public static <T extends Entity> T nbt(T self, Map val) {
         setNbt self, val
         self
     }
@@ -66,6 +67,7 @@ class NBTExtension {
     }
 
     private static int maxDist = Bukkit.server.viewDistance * 32
+
     @CompileStatic(TypeCheckingMode.SKIP)
     public static boolean setNbt(Block self, NBTCompound val) {
         Object tile = self.world.getTileEntityAt self.x, self.y, self.z
@@ -104,7 +106,7 @@ class NBTExtension {
         result
     }
 
-    public static<T extends Block> T nbt(T self, Map val) {
+    public static <T extends Block> T nbt(T self, Map val) {
         setNbt self, val
         self
     }
@@ -153,7 +155,7 @@ class NBTExtension {
         result
     }
 
-    public static<T extends ItemStack> T nbt(T self, Map val) {
+    public static <T extends ItemStack> T nbt(T self, Map val) {
         setNbt self, val
         self
     }
@@ -210,7 +212,7 @@ class NBTExtension {
         result
     }
 
-    public static<T extends File> T nbt(T self, Map val) {
+    public static <T extends File> T nbt(T self, Map val) {
         setNbt self, val
         self
     }
@@ -246,7 +248,7 @@ class NBTExtension {
         result
     }
 
-    public static<T extends String> T nbt(T self, Map val) {
+    public static <T extends String> T nbt(T self, Map val) {
         setNbt self, val
         self
     }
@@ -280,7 +282,7 @@ class NBTExtension {
         result
     }
 
-    public static<T extends OfflinePlayer> T offlineNbt(T self, Map val) {
+    public static <T extends OfflinePlayer> T offlineNbt(T self, Map val) {
         setOfflineNbt self, val
         self
     }

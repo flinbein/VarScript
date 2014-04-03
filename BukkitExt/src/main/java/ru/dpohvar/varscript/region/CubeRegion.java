@@ -7,13 +7,6 @@ import org.bukkit.block.Block;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: DPOH-VAR
- * Date: 21.06.12
- * Time: 11:58
- * To change this template use File | Settings | File Templates.
- */
 public class CubeRegion extends Region {
     protected double x1, y1, z1;
     protected double x2, y2, z2;
@@ -99,13 +92,21 @@ public class CubeRegion extends Region {
     @Override
     public List<Block> getBlocks() {
         List<Block> blocks = new ArrayList<>();
-        int xa = (int) (Math.floor(x1)), ya = (int) (y1), za = (int) (Math.floor(z1));
-        int xb = (int) (Math.floor(x2)), yb = (int) (y2), zb = (int) (Math.floor(z2));
-        for (int x = xa; x <= xb; x++)
-            for (int y = ya; y <= yb; y++)
+
+        int xa = (int) Math.floor(x1);
+        int ya = (int) y1;
+        int za = (int) Math.floor(z1);
+        int xb = (int) Math.floor(x2);
+        int yb = (int) y2;
+        int zb = (int) Math.floor(z2);
+
+        for (int x = xa; x <= xb; x++) {
+            for (int y = ya; y <= yb; y++){
                 for (int z = za; z <= zb; z++) {
                     blocks.add(world.getBlockAt(x, y, z));
                 }
+            }
+        }
         return blocks;
     }
 

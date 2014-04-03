@@ -1,18 +1,15 @@
 package ru.dpohvar.varscript.utils;
 
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 
 /**
- * Created by DPOH-VAR on 28.02.14
+ * Change -usejavacp and -bootclasspath variables of scala script engine
  */
 public class ScalaOptimizer {
 
-    public static ScriptEngine modify(ScriptEngine engine, ClassLoader loader) throws Throwable{
+    public static ScriptEngine modify(ScriptEngine engine) throws Throwable{
 
         Method methodSettings = engine.getClass().getMethod("settings");
         Object settings = methodSettings.invoke(engine);

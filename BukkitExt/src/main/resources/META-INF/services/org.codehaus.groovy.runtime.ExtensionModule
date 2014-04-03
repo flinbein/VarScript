@@ -1,13 +1,14 @@
 moduleName=bukkit-module
-moduleVersion=1.1
-extensionClasses=ru.dpohvar.varscript.groovy.extension.BlockExtension,\
-  ru.dpohvar.varscript.groovy.extension.DamageableExtension,\
-  ru.dpohvar.varscript.groovy.extension.EntityExtension,\
-  ru.dpohvar.varscript.groovy.extension.InventoryHolderExtension,\
-  ru.dpohvar.varscript.groovy.extension.HumanEntityExtension,\
-  ru.dpohvar.varscript.groovy.extension.LivingEntityExtension,\
-  ru.dpohvar.varscript.groovy.extension.LocationExtension,\
-  ru.dpohvar.varscript.groovy.extension.ScriptExtension,\
-  ru.dpohvar.varscript.groovy.extension.StringExtension,\
-  ru.dpohvar.varscript.groovy.extension.VectorExtension,\
-  ru.dpohvar.varscript.groovy.extension.WorkspaceExtension
+moduleVersion=1.2
+extensionClasses=\
+  ru.dpohvar.varscript.extension.BlockExtension,\
+  ru.dpohvar.varscript.extension.DamageableExtension,\
+  ru.dpohvar.varscript.extension.EntityExtension,\
+  ru.dpohvar.varscript.extension.HumanEntityExtension,\
+  ru.dpohvar.varscript.extension.InventoryHolderExtension,\
+  ru.dpohvar.varscript.extension.LivingEntityExtension,\
+  ru.dpohvar.varscript.extension.LocationExtension,\
+  ru.dpohvar.varscript.extension.ScriptExtension,\
+  ru.dpohvar.varscript.extension.StringExtension,\
+  ru.dpohvar.varscript.extension.VectorExtension,\
+  ru.dpohvar.varscript.extension.WorkspaceExtension

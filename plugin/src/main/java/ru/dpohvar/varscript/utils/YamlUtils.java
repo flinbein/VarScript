@@ -6,11 +6,10 @@ import ru.dpohvar.varscript.VarScriptPlugin;
 
 import java.io.*;
 
-/**
- * Created by DPOH-VAR on 24.02.14
- */
 public class YamlUtils {
-    private static Yaml yaml; static {
+    private static Yaml yaml;
+
+    static {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         yaml = new Yaml(options);

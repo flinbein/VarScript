@@ -12,32 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by DPOH-VAR on 24.02.14
- */
-
-/**
- * Порядок чтения переменных:
- *
- * сессия (me, etc)
- * глобальные переменные (server, etc)
- *
- * воркспейс переменные (a, b)
- *
- * ServerBindings:
- *   плагины (WorldEdit, VarScript)
- *   общие переменные (foo, bar)
- *   переменные - игроки (DPOHVAR)
- */
-
-/**
- * Это глобальные доступные биндинги.
- * Содержит HashMap
- * При доступе по ключу -
- * сначала ищет плагин с таким названием
- * потом элемент в хешмапе,
- * потом игрок с таким именем
- */
 public class ServerBindings implements Bindings {
 
     private final Server server;
@@ -92,10 +66,10 @@ public class ServerBindings implements Bindings {
     @Override
     public boolean containsKey(Object key) {
         if (!(key instanceof String)) return false;
-        Plugin plugin = manager.getPlugin((String)key);
-        if (plugin!=null) return true;
+        Plugin plugin = manager.getPlugin((String) key);
+        if (plugin != null) return true;
         if (map.containsKey(key)) return true;
-        Player player = server.getPlayerExact((String)key);
+        Player player = server.getPlayerExact((String) key);
         return player != null;
     }
 
@@ -107,10 +81,10 @@ public class ServerBindings implements Bindings {
     @Override
     public Object get(Object key) {
         if (!(key instanceof String)) return false;
-        Plugin plugin = manager.getPlugin((String)key);
-        if (plugin!=null) return plugin;
+        Plugin plugin = manager.getPlugin((String) key);
+        if (plugin != null) return plugin;
         if (map.containsKey(key)) return map.get(key);
-        return server.getPlayerExact((String)key);
+        return server.getPlayerExact((String) key);
     }
 
     @Override

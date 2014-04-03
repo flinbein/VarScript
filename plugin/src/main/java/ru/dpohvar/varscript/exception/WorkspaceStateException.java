@@ -1,7 +1,7 @@
 package ru.dpohvar.varscript.exception;
 
 /**
- * Created by DPOH-VAR on 26.02.14
+ * Exception that is generated when you trying to use unloaded workspace
  */
 public class WorkspaceStateException extends RuntimeException {
 }

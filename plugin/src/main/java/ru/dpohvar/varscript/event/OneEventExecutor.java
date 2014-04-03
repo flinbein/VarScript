@@ -5,11 +5,6 @@ import org.bukkit.event.EventException;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.EventExecutor;
 
-import java.lang.reflect.InvocationTargetException;
-
-/**
- * Created by DPOH-VAR on 26.02.14
- */
 public class OneEventExecutor implements EventExecutor {
 
     private final Class eventClass;

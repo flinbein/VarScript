@@ -1,18 +1,15 @@
 package ru.dpohvar.varscript.utils;
 
-import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
-import org.bukkit.event.*;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.*;
-import ru.dpohvar.varscript.event.*;
 import ru.dpohvar.varscript.event.EventHandler;
+import ru.dpohvar.varscript.event.OneEventExecutor;
 
 import java.lang.reflect.Method;
-import java.util.*;
 
-/**
- * Created by DPOH-VAR on 26.02.14
- */
 public class EventUtils {
 
     public static Class<? extends Event> getRegistrationClass(Class<? extends Event> clazz) {

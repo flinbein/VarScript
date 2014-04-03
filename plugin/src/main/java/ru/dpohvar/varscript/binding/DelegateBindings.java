@@ -5,16 +5,10 @@ import ru.dpohvar.varscript.utils.StringSetUtils;
 import javax.script.Bindings;
 import java.util.*;
 
-/**
- * Это биндинги для Workspace
- * Внутри содержится HashMap
- * При просмотре значения, если оно не найдено в хешмапе,
- * то ищется в параметре view
- */
 public class DelegateBindings implements Bindings {
 
-    private final Map<String,Object> map = new HashMap<>();
-    private final Map<String,Object> view;
+    private final Map<String, Object> map = new HashMap<>();
+    private final Map<String, Object> view;
 
     public DelegateBindings(Map<String, Object> view) {
         this.view = view;
@@ -22,7 +16,7 @@ public class DelegateBindings implements Bindings {
 
     public Object put(String name, Object value) {
         checkKey(name);
-        return map.put(name,value);
+        return map.put(name, value);
     }
 
     public void putAll(Map<? extends String, ?> toMerge) {
