@@ -1,0 +1,3 @@
+moduleName=powernbt-module
+moduleVersion=2.0
+extensionClasses=ru.dpohvar.varscript.extension.PowerNBTExtension
