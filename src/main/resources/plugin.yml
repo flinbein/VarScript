@@ -1,0 +1,12 @@
+name: ${project.artifactId}
+version: ${project.version}
+description: ${plugin-description}
+author: ${plugin-author}
+database: false
+main: ru.dpohvar.varscript.VarScript
+
+commands:
+  '>':
+    description: run code
+  'ivy':
+    description: manage ivy dependencies
