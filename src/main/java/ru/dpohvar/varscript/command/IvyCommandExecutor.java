@@ -30,17 +30,17 @@ public class IvyCommandExecutor implements CommandExecutor{
         if (strings.length == 2) conf = strings[1];
         else conf = "default";
         try {
-            caller.sendMessage("resolving "+mrId);
+            caller.sendMessage("resolving "+mrId, null);
             ResolveReport resolveReport = BootHelper.resolveIvy(mrId, conf);
             if (resolveReport.hasError()) {
-                caller.sendErrorMessage(StringUtils.join(resolveReport.getProblemMessages(),'\n'));
+                caller.sendErrorMessage(StringUtils.join(resolveReport.getProblemMessages(),'\n'), null);
                 return true;
             }
-            caller.sendMessage("loading dependencies of "+mrId);
+            caller.sendMessage("loading dependencies of "+mrId, null);
             BootHelper.loadReportedArtifacts(resolveReport, plugin.getName());
-            caller.sendMessage(mrId + " loaded");
+            caller.sendMessage(mrId + " loaded", null);
         } catch (Exception e) {
-            caller.sendThrowable(e);
+            caller.sendThrowable(e, null);
         }
         return true;
 

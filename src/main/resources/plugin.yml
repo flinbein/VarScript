@@ -4,9 +4,17 @@ description: ${plugin-description}
 author: ${plugin-author}
 database: false
 main: ru.dpohvar.varscript.VarScript
+softdepend: [PowerNBT]
 
 commands:
   '>':
     description: run code
+    aliases: [g>]
+    permission: varscript.run
   'ivy':
     description: manage ivy dependencies
+    permission: varscript.ivy
+  'workspace':
+    description: manage workspaces
+    aliases: [workspaces, ws]
+    permission: varscript.workspace

@@ -58,10 +58,11 @@ public class GroovyCommandExecutor implements CommandExecutor{
                 conversation.begin();
                 return true;
             } else {
+                return false;
                 // ERROR YOU ARE BLOCK! HAHAHAHA
             }
         } else {
-            runner.run(buffer);
+            runner.compileAsyncAndRun(buffer);
         }
         return true;
     }

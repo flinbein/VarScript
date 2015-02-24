@@ -1,0 +1,8 @@
+moduleName=varscript-ext
+moduleVersion=${plugin-version}
+extensionClasses=ru.dpohvar.varscript.extension.LocationExt,\
+  ru.dpohvar.varscript.extension.EntityExt,\
+  ru.dpohvar.varscript.extension.BlockExt,\
+  ru.dpohvar.varscript.extension.StringExt,\
+  ru.dpohvar.varscript.extension.CallerScriptExt,\
+  ru.dpohvar.varscript.extension.PowerNBTExt

@@ -48,38 +48,44 @@ public class Caller {
     private StringBuilder printCache = new StringBuilder();
     private BukkitTask flushBukkitTask = null;
 
-    public void sendPrintMessage(String s){
+    public void sendPrintMessage(String message, String source){
         if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(VarScript.printPrefix + s);
+            ((Conversable) sender).sendRawMessage(VarScript.printPrefix + message);
         } else {
-            sender.sendMessage(VarScript.printPrefix + s);
+            if (source == null) source = "";
+            String prefix = String.format(VarScript.printPrefix, source);
+            sender.sendMessage(prefix + message);
         }
     }
 
-    public void sendMessage(String s){
+    public void sendMessage(String message, String source){
         if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(VarScript.prefix + s);
+            ((Conversable) sender).sendRawMessage(VarScript.prefix + message);
         } else {
-            sender.sendMessage(VarScript.prefix + s);
+            if (source == null) source = "";
+            String prefix = String.format(VarScript.prefix, source);
+            sender.sendMessage(prefix + message);
         }
     }
 
-    public void sendErrorMessage(String s){
+    public void sendErrorMessage(String message, String source){
         if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(VarScript.errorPrefix + s);
+            ((Conversable) sender).sendRawMessage(VarScript.errorPrefix + message);
         } else {
-            sender.sendMessage(VarScript.errorPrefix + s);
+            if (source == null) source = "";
+            String prefix = String.format(VarScript.errorPrefix, source);
+            sender.sendMessage(prefix + message);
         }
     }
 
-    public void sendThrowable(Throwable e){
+    public void sendThrowable(Throwable e, String source){
         String message = e.getLocalizedMessage();
         if (message == null) message = e.getMessage();
         if (message == null) message = e.toString();
         if (plugin.getConfig().getBoolean("debug")) {
             plugin.getLogger().log(Level.WARNING, e.getClass().getSimpleName(), e);
         }
-        sendErrorMessage(RED + e.getClass().getSimpleName() + RESET + "\n" + message);
+        sendErrorMessage(RED + e.getClass().getSimpleName() + RESET + "\n" + message, source);
     }
 
     public Workspace getCurrentWorkspace(){

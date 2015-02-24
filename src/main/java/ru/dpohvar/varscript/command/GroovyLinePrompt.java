@@ -41,7 +41,7 @@ public class GroovyLinePrompt extends StringPrompt{
         }
         if (s.equals("\\run")) {
             GroovyBufferRunner runner = (GroovyBufferRunner) conversationContext.getSessionData("runner");
-            runner.runNextTick(buffer);
+            runner.compileAsyncAndRun(buffer);
             return Prompt.END_OF_CONVERSATION;
         }
 
@@ -60,7 +60,7 @@ public class GroovyLinePrompt extends StringPrompt{
             String promptText = getPromptText(conversationContext);
             conversationContext.getForWhom().sendRawMessage(promptText);
             GroovyBufferRunner runner = (GroovyBufferRunner) conversationContext.getSessionData("runner");
-            runner.runNextTick(buffer);
+            runner.compileAsyncAndRun(buffer);
             return Prompt.END_OF_CONVERSATION;
         }
         return this;

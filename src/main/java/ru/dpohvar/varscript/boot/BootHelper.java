@@ -51,27 +51,30 @@ public class BootHelper {
     public static Ivy prepareIvy(){
 
         if (ivy != null) return ivy;
-
-        File configFile = new File(VarScript.dataFolder, "config.yml");
-        File ivySettingsXmlFile = new File(VarScript.dataFolder, "ivysettings.xml");
-
-        Map config;
-        if (configFile.isFile()) config = readYaml(configFile);
-        else config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
-        Map ivySettings = (Map) config.get("ivy");
-        if (ivySettings == null) {
-            config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
-            ivySettings = (Map) config.get("ivy");
+        try {
+            Class.forName("org.apache.ivy.Ivy");
+        } catch (ClassNotFoundException ignored) {
+            File configFile = new File(VarScript.dataFolder, "config.yml");
+            Map config;
+            if (configFile.isFile()) config = readYaml(configFile);
+            else config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+            Map ivySettings = (Map) config.get("ivy");
+            if (ivySettings == null) {
+                config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+                ivySettings = (Map) config.get("ivy");
+            }
+            File ivyJarFile = new File((String) ivySettings.get("jar"));
+            if (!ivyJarFile.isFile()){
+                String ivyDownloadURL = (String) ivySettings.get("download-url");
+                downloadIvyJar(ivyDownloadURL, ivyJarFile);
+            }
+            addFileToClassLoader(VarScript.pluginClassLoader, ivyJarFile);
         }
-        File ivyJarFile = new File((String) ivySettings.get("jar"));
-        if (!ivyJarFile.isFile()){
-            String ivyDownloadURL = (String) ivySettings.get("download-url");
-            downloadIvyJar(ivyDownloadURL, ivyJarFile);
-        }
-        addFileToClassLoader(VarScript.pluginClassLoader, ivyJarFile);
 
         ivy = new Ivy();
         IvySettings settings = new IvySettings();
+
+        File ivySettingsXmlFile = new File(VarScript.dataFolder, "ivysettings.xml");
         try {
             if (ivySettingsXmlFile.isFile()) settings.load(ivySettingsXmlFile);
             else settings.load(VarScript.pluginClassLoader.getResource("ivysettings.xml"));
@@ -107,9 +110,31 @@ public class BootHelper {
         }
     }
 
-    public static void loadExtensions(){
+    public static void loadLibraries(){
+        File configFile = new File(VarScript.dataFolder, "config.yml");
+        Map config;
+        if (configFile.isFile()) config = readYaml(configFile);
+        else config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+        Object librariesValue = config.get("libraries");
+        if (librariesValue == null) {
+            config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+            librariesValue = config.get("libraries");
+        }
+        if (librariesValue instanceof String && !((String) librariesValue).isEmpty()) {
+            File librariesFolder = new File((String) librariesValue);
+            File[] files = librariesFolder.listFiles();
+            if (!librariesFolder.isDirectory()) return;
+            addFileToClassLoader(VarScript.pluginClassLoader, librariesFolder);
+            if (files != null) for (File file : files) {
+                if (file.getName().toLowerCase().endsWith(".jar")) {
+                    addFileToClassLoader(VarScript.pluginClassLoader, file);
+                }
+            }
+        }
+    }
+
+    public static void loadExtensions(ClassLoader classLoader){
         Map<CachedClass, List<MetaMethod>> map = new HashMap<CachedClass, List<MetaMethod>>();
-        ClassLoader classLoader = VarScript.pluginClassLoader;
         Enumeration<URL> resources = null;
         try {
             resources = classLoader.getResources(ExtensionModuleScanner.MODULE_META_INF_FILE);
@@ -257,7 +282,6 @@ public class BootHelper {
     public static void checkPlugins(){
         for (File file : getAllPluginsFiles()) {
             checkPlugin(file);
-
         }
     }
 
@@ -449,7 +473,7 @@ public class BootHelper {
      * @throws ParseException
      */
     public static ResolveReport resolveIvy(String mrId, String conf) throws IOException, ParseException {
-        return resolveIvy(ModuleRevisionId.decode(mrId), conf);
+        return resolveIvy(ModuleRevisionId.parse(mrId), conf);
     }
 
 

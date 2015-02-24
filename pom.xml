@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <plugin-version>0.7.0.1-SNAPSHOT</plugin-version>
+        <plugin-version>0.7.0.4-SNAPSHOT</plugin-version>
 
         <plugin-author>DPOH-VAR</plugin-author>
         <plugin-website>http://dev.bukkit.org/bukkit-plugins/varscript/</plugin-website>
@@ -16,6 +16,7 @@
         <bukkit-version>1.8-R0.1-SNAPSHOT</bukkit-version>
         <spigot-version>1.8-R0.1-SNAPSHOT</spigot-version>
         <ivy-version>2.4.0</ivy-version>
+        <powernbt-version>0.8.2-SNAPSHOT</powernbt-version>
         <groovy-version>2.4.0</groovy-version>
 
         <github.global.server>github</github.global.server>
@@ -35,8 +36,15 @@
     <version>${plugin-version}</version>
     <packaging>jar</packaging>
 
-    <description>Powerful NBT editor for CraftBukkit 1.5 and later</description>
+    <description>Powerful Scripting Plugin</description>
     <url>http://dev.bukkit.org/bukkit-plugins/varscript/</url>
+
+    <scm>
+        <connection>scm:git:https://github.com/DPOH-VAR/VarScript.git</connection>
+        <developerConnection>scm:git:git@github.com:DPOH-VAR/github-repo.git</developerConnection>
+        <url>https://github.com/DPOH-VAR/VarScript</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <distributionManagement>
         <downloadUrl>http://dev.bukkit.org/bukkit-plugins/varscript/</downloadUrl>
@@ -56,6 +64,17 @@
         <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>dpohvar.ru-releases</id>
+            <name>dpohvar.ru-releases</name>
+            <url>http://dpohvar.ru/artifactory/release</url>
+        </repository>
+
+        <repository>
+            <id>dpohvar.ru-snapshots</id>
+            <name>dpohvar.ru-snapshots</name>
+            <url>http://dpohvar.ru/artifactory/snapshots</url>
         </repository>
     </repositories>
 
@@ -84,6 +103,12 @@
             <version>${groovy-version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>me.dpohvar.powernbt</groupId>
+            <artifactId>PowerNBT</artifactId>
+            <version>${powernbt-version}</version>
+            <scope>provided</scope>
+        </dependency>
 
     </dependencies>
 
@@ -93,7 +118,17 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>ivysettings.xml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>ivysettings.xml</exclude>
+                </excludes>
             </resource>
         </resources>
 

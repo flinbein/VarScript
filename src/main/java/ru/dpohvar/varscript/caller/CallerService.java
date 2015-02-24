@@ -32,7 +32,7 @@ public class CallerService implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
         Caller caller = callerMap.get(uuid);
-        caller.sender = player;
+        if (caller != null) caller.sender = player;
     }
 
     public Caller getCaller(CommandSender sender){
@@ -44,6 +44,10 @@ public class CallerService implements Listener {
             callerMap.put(hash, caller);
         }
         return caller;
+    }
+
+    public Caller getConsoleCaller(){
+        return getCaller(plugin.getServer().getConsoleSender());
     }
 
     private Caller createCaller(CommandSender sender){
