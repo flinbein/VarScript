@@ -27,6 +27,10 @@ public class GroovyBufferRunner {
         scheduler.runTaskAsynchronously(plugin, asyncCompiler);
     }
 
+    public Caller getCaller() {
+        return caller;
+    }
+
     private static class AsyncCompiler implements Runnable{
 
         private final Workspace workspace;
@@ -80,7 +84,7 @@ public class GroovyBufferRunner {
                 if (result instanceof CallerScript) result = ((CallerScript) result).run();
                 if (result != null) caller.sendMessage(DefaultGroovyMethods.toString(result), workspace.getName());
                 caller.setLastResult(result);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 caller.sendThrowable(e, workspace.getName());
             }
         }

@@ -1,4 +1,4 @@
-package ru.dpohvar.varscript.modifier;
+package ru.dpohvar.varscript.extension.service;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.control.SourceUnit;
@@ -13,6 +13,7 @@ import java.util.List;
 import static org.codehaus.groovy.control.CompilePhase.CONVERSION;
 
 @GroovyASTTransformation(phase=CONVERSION)
+@Deprecated
 public class ImportVersionASTTransformation implements ASTTransformation {
 
     private final String cbVersionSuffix = ReflectionUtils.getCbVersionSuffix();

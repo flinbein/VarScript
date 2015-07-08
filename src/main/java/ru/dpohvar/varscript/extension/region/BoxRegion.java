@@ -11,6 +11,7 @@ public class BoxRegion extends Region {
     protected double x1, y1, z1;
     protected double x2, y2, z2;
     protected World world;
+    protected List<Block> blockCache;
 
     public String toString() {
         return "CUBEREGION(" + x1 + ":" + y1 + ":" + z1 + "," + x2 + ":" + y2 + ":" + z2 + "," + world.getName() + ")";
@@ -91,6 +92,11 @@ public class BoxRegion extends Region {
 
     @Override
     public List<Block> getBlocks() {
+        if (blockCache == null) blockCache = getBlocks0();
+        return new ArrayList<Block>(blockCache);
+    }
+
+    protected List<Block> getBlocks0() {
         List<Block> blocks = new ArrayList<Block>();
 
         int xa = (int) Math.floor(x1);

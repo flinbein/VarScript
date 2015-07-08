@@ -32,22 +32,24 @@ public class GroovyCommandExecutor implements CommandExecutor{
         factory = new ConversationFactory(plugin)
                 .withFirstPrompt(new GroovyLinePrompt(parser))
                 .withLocalEcho(false)
-                .withTimeout(120);
+                .withTimeout(300);
     }
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
         String inputLine = StringUtils.join(strings, ' ');
+        if (commandSender instanceof Conversable && ((Conversable) commandSender).isConversing()) {
+            ((Conversable) commandSender).acceptConversationInput(inputLine);
+            return true;
+        }
         Map<Object,Object> sessionData = new HashMap<Object,Object>();
-        sessionData.put("input", inputLine);
         List<String> buffer = new ArrayList<String>();
+        sessionData.put("input", inputLine);
         buffer.add(inputLine);
         sessionData.put("buffer", buffer);
         Caller caller = plugin.getCallerService().getCaller(commandSender);
         GroovyBufferRunner runner = new GroovyBufferRunner(caller);
         sessionData.put("runner", runner);
-
-
         ParseStatus status = parser.parse(buffer);
         int code = status.getCode().getCode();
         if (code == INCOMPLETE) {
@@ -59,7 +61,7 @@ public class GroovyCommandExecutor implements CommandExecutor{
                 return true;
             } else {
                 return false;
-                // ERROR YOU ARE BLOCK! HAHAHAHA
+                // ERROR YOU ARE BLOCK! MWAHAHAHAHA
             }
         } else {
             runner.compileAsyncAndRun(buffer);

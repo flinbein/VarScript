@@ -326,6 +326,10 @@ public class EntityExt {
         return minus(self, val.getLocation());
     }
 
+    public static Location plus(Entity self, Vector val){
+        return getLoc(self).add(val);
+    }
+
     // entity-specific
 
     public static Entity tpto(Entity self, Location target){
@@ -456,6 +460,11 @@ public class EntityExt {
 
     public static void setPas(Entity self, Entity passenger){
         self.setPassenger(passenger);
+    }
+
+    public static <T extends Entity> T xor(Entity self, T passenger){
+        self.setPassenger(passenger);
+        return passenger;
     }
 
     public static void pas(Entity self, Entity passenger){

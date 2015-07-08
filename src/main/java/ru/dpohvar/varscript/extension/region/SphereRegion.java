@@ -11,6 +11,7 @@ public class SphereRegion extends Region {
     protected double px, py, pz;
     protected double radius;
     protected World world;
+    protected List<Block> blockCache;
 
     public String toString() {
         return "SPHEREREGION(" + px + ":" + py + ":" + pz + "," + radius + "," + world.getName() + ")";
@@ -57,6 +58,11 @@ public class SphereRegion extends Region {
 
     @Override
     public List<Block> getBlocks() {
+        if (blockCache == null) blockCache = getBlocks0();
+        return new ArrayList<Block>(blockCache);
+    }
+
+    protected List<Block> getBlocks0() {
         List<Block> blocks = new ArrayList<Block>();
         int xa = (int) (px - radius - 1), ya = (int) (py - radius - 1), za = (int) (pz - radius - 1);
         int xb = (int) (px + radius + 1), yb = (int) (py + radius + 1), zb = (int) (pz + radius + 1);

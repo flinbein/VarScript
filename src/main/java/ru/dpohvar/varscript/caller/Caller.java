@@ -18,7 +18,6 @@ public class Caller {
     CommandSender sender;
     private final CallerService service;
     private final VarScript plugin;
-    private final BukkitScheduler scheduler;
 
     private Object lastResult;
 
@@ -26,7 +25,6 @@ public class Caller {
         this.service = service;
         this.sender = sender;
         plugin = service.getPlugin();
-        scheduler = plugin.getServer().getScheduler();
     }
 
     public Object getLastResult() {
@@ -45,35 +43,32 @@ public class Caller {
         return sender;
     }
 
-    private StringBuilder printCache = new StringBuilder();
-    private BukkitTask flushBukkitTask = null;
-
-    public void sendPrintMessage(String message, String source){
+    public void sendPrintMessage(CharSequence message, String source){
+        if (source == null) source = "";
+        String prefix = String.format(VarScript.printPrefix, source);
         if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(VarScript.printPrefix + message);
+            ((Conversable) sender).sendRawMessage(prefix + message);
         } else {
-            if (source == null) source = "";
-            String prefix = String.format(VarScript.printPrefix, source);
             sender.sendMessage(prefix + message);
         }
     }
 
-    public void sendMessage(String message, String source){
+    public void sendMessage(CharSequence message, String source){
+        if (source == null) source = "";
+        String prefix = String.format(VarScript.prefix, source);
         if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(VarScript.prefix + message);
+            ((Conversable) sender).sendRawMessage(prefix + message);
         } else {
-            if (source == null) source = "";
-            String prefix = String.format(VarScript.prefix, source);
             sender.sendMessage(prefix + message);
         }
     }
 
-    public void sendErrorMessage(String message, String source){
+    public void sendErrorMessage(CharSequence message, String source){
+        if (source == null) source = "";
+        String prefix = String.format(VarScript.errorPrefix, source);
         if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(VarScript.errorPrefix + message);
+            ((Conversable) sender).sendRawMessage(prefix + message);
         } else {
-            if (source == null) source = "";
-            String prefix = String.format(VarScript.errorPrefix, source);
             sender.sendMessage(prefix + message);
         }
     }
@@ -83,7 +78,7 @@ public class Caller {
         if (message == null) message = e.getMessage();
         if (message == null) message = e.toString();
         if (plugin.getConfig().getBoolean("debug")) {
-            plugin.getLogger().log(Level.WARNING, e.getClass().getSimpleName(), e);
+            plugin.getLogger().log(Level.WARNING, source, e);
         }
         sendErrorMessage(RED + e.getClass().getSimpleName() + RESET + "\n" + message, source);
     }

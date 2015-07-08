@@ -1,4 +1,4 @@
-package ru.dpohvar.varscript.modifier;
+package ru.dpohvar.varscript.extension.service;
 
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MetaClass;

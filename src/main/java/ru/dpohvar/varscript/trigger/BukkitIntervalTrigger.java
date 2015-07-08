@@ -4,6 +4,7 @@ import groovy.lang.Closure;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 import ru.dpohvar.varscript.VarScript;
+import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.util.Set;
@@ -54,14 +55,19 @@ public class BukkitIntervalTrigger implements Trigger, Runnable {
     public void run() {
         if (handler == null) return;
         int counter = count++;
-        if (usedArgs == 0) {
-            handler.setProperty("count", counter);
-            handler.setProperty("trigger", this);
-            handler.call();
-        } else if (usedArgs == 1) {
-            handler.call(counter);
-        } else if (usedArgs == 2) {
-            handler.call(counter, this);
+        try {
+            if (usedArgs == 0) {
+                handler.setProperty("count", counter);
+                handler.setProperty("trigger", this);
+                handler.call();
+            } else if (usedArgs == 1) {
+                handler.call(counter);
+            } else if (usedArgs == 2) {
+                handler.call(counter, this);
+            }
+        } catch (Throwable t) {
+            Caller caller = workspace.getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
+            caller.sendThrowable(t, workspace.getName());
         }
 
     }

@@ -3,16 +3,14 @@ package ru.dpohvar.varscript.trigger;
 import groovy.lang.Closure;
 import org.bukkit.Server;
 import org.bukkit.command.*;
-import org.bukkit.plugin.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+import static org.bukkit.ChatColor.stripColor;
 import static ru.dpohvar.varscript.utils.ReflectionUtils.*;
 
 import static ru.dpohvar.varscript.utils.ReflectionUtils.getRefClass;
@@ -24,6 +22,7 @@ public class CommandTrigger extends Command implements Trigger {
     private final Workspace workspace;
     private final Set<Trigger> parentTriggers;
     private final String name;
+    private final String fallbackPrefix;
     private List<Integer> argOrder;
     private final SimpleCommandMap commandMap;
 
@@ -32,10 +31,16 @@ public class CommandTrigger extends Command implements Trigger {
         this.workspace = workspace;
         this.parentTriggers = parentTriggers;
         this.name = name;
+        this.fallbackPrefix = stripColor(workspace.getName()).toLowerCase().trim().replace(' ', '_');
         Server server = workspace.getWorkspaceService().getVarScript().getServer();
         this.commandMap = mGetCommandMap.of(server).call();
-        commandMap.register(workspace.getName(), this);
+        register(commandMap);
+        commandMap.register(fallbackPrefix, this);
         parentTriggers.add(this);
+    }
+
+    public String getFallbackPrefix() {
+        return fallbackPrefix;
     }
 
     public Closure getHandler() {
@@ -56,14 +61,16 @@ public class CommandTrigger extends Command implements Trigger {
             } else {
                 List<Object> passArguments = new ArrayList<Object>();
                 for (Integer t : argOrder) switch (t) {
-                    case 0: passArguments.add(sender);
-                    case 1: passArguments.add(args);
-                    case 2: passArguments.add(command);
+                    case 0: passArguments.add(sender); break;
+                    case 1: passArguments.add(args); break;
+                    case 2: passArguments.add(command); break;
                 }
                 Object result = handler.call(passArguments.toArray());
                 return DefaultGroovyMethods.asBoolean(result);
             }
         } catch (Throwable e) {
+            Caller caller = workspace.getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
+            caller.sendThrowable(e, workspace.getName());
             String className = e.getClass().getName();
             String commandName = workspace.getName()+":"+name;
             sender.sendMessage(className + " on command " + commandName + "\n" + e.getMessage());
@@ -123,14 +130,17 @@ public class CommandTrigger extends Command implements Trigger {
         unregister(commandMap);
         this.stopped = true;
         if (parentTriggers != null) parentTriggers.remove(this);
+        Map<?,?> knownCommands = fKnownCommands.of(commandMap).get();
+        Iterator<? extends Map.Entry<?, ?>> iterator = knownCommands.entrySet().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getValue() == this) iterator.remove();
+        }
         return true;
     }
 
-    static RefClass<PluginCommand> cPluginCommand = getRefClass(PluginCommand.class);
-    static RefConstructor<PluginCommand> nPluginCommand = cPluginCommand.getConstructor(String.class, Plugin.class);
     static RefClass<?> cCraftServer = getRefClass("{cb}.CraftServer");
     static RefMethod<SimpleCommandMap> mGetCommandMap = cCraftServer.findMethodByReturnType(SimpleCommandMap.class);
-    static RefField fKnownCommands = getRefClass(SimpleCommandMap.class).getField("knownCommands");
+    static RefField<Map> fKnownCommands = getRefClass(SimpleCommandMap.class).findField(Map.class);
 
 
 }

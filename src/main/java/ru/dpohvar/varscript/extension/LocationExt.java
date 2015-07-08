@@ -317,6 +317,52 @@ public class LocationExt {
         return minus(self, val.getLocation());
     }
 
+    public static Location plus(Location self, Vector val){
+        return getLoc(self).add(val);
+    }
+
     // location-specific
 
+    public static Location add(Location self, Vector vector){
+        return self.add(vector);
+    }
+
+    public static Location mid(Location self, Location val){
+        return new Location(
+                self.getWorld(),
+                self.getX() + (val.getX() - self.getX()) / 2,
+                self.getY() + (val.getY() - self.getY()) / 2,
+                self.getZ() + (val.getZ() - self.getZ()) / 2
+        );
+    }
+
+    public static Location or(Location self, Location val){
+        return mid(self,val);
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -9,6 +9,7 @@ import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.TimedRegisteredListener;
 import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import ru.dpohvar.varscript.VarScript;
+import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.lang.reflect.Method;
@@ -54,7 +55,8 @@ public class BukkitEventTrigger<T extends Event> implements Trigger, Listener, E
                 handler.call(event);
             }
         } catch (Throwable t) {
-            throw new EventException(t);
+            Caller caller = workspace.getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
+            caller.sendThrowable(t, workspace.getName());
         }
     }
 

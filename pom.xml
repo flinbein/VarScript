@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <plugin-version>0.7.0.4-SNAPSHOT</plugin-version>
+        <plugin-version>1.1</plugin-version>
 
         <plugin-author>DPOH-VAR</plugin-author>
         <plugin-website>http://dev.bukkit.org/bukkit-plugins/varscript/</plugin-website>
@@ -16,7 +16,7 @@
         <bukkit-version>1.8-R0.1-SNAPSHOT</bukkit-version>
         <spigot-version>1.8-R0.1-SNAPSHOT</spigot-version>
         <ivy-version>2.4.0</ivy-version>
-        <powernbt-version>0.8.2-SNAPSHOT</powernbt-version>
+        <powernbt-version>0.8.3</powernbt-version>
         <groovy-version>2.4.0</groovy-version>
 
         <github.global.server>github</github.global.server>
@@ -150,74 +150,6 @@
                 <configuration>
                     <destDir>doc</destDir>
                     <show>public</show>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <configuration>
-                            <tasks>
-                                <mkdir dir="${basedir}/src/main/groovy"/>
-                                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
-                                    <classpath refid="maven.compile.classpath"/>
-                                </taskdef>
-                                <mkdir dir="${project.build.outputDirectory}"/>
-                                <groovyc destdir="${project.build.outputDirectory}"
-                                         srcdir="${basedir}/src/main/groovy/" listfiles="true">
-                                    <classpath refid="maven.compile.classpath"/>
-                                </groovyc>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <configuration>
-                            <tasks>
-                                <mkdir dir="${basedir}/src/test/groovy"/>
-                                <taskdef name="groovyc"
-                                         classname="org.codehaus.groovy.ant.Groovyc">
-                                    <classpath refid="maven.test.classpath"/>
-                                </taskdef>
-                                <mkdir dir="${project.build.testOutputDirectory}"/>
-                                <groovyc destdir="${project.build.testOutputDirectory}"
-                                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
-                                    <classpath refid="maven.test.classpath"/>
-                                </groovyc>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>com.bluetrainsoftware.maven</groupId>
-                <artifactId>groovydoc-maven-plugin</artifactId>
-                <version>1.2</version>
-                <executions>
-                    <execution>
-                        <id>site</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <additionalSourceDirectories>
-                        <additionalSourceDirectory>src/main/groovy</additionalSourceDirectory>
-                    </additionalSourceDirectories>
                 </configuration>
             </plugin>
 

@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.util.*;
@@ -53,7 +54,12 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
         if (parentTriggers != null) parentTriggers.remove(this);
         for (Trigger trigger : getTriggers()) {
             trigger.stop();
-            if (trigger instanceof ShutdownHookTrigger) ((ShutdownHookTrigger) trigger).run();
+            if (trigger instanceof StopHookTrigger) try {
+                ((StopHookTrigger) trigger).run();
+            } catch (Exception e) {
+                Caller caller = workspace.getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
+                caller.sendThrowable(e, workspace.getName());
+            }
         }
         return true;
     }
@@ -102,8 +108,8 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
         if (disabled) throw new IllegalStateException("container is disabled");
         Class[] types = closure.getParameterTypes();
         if (types.length != 1) throw new IllegalArgumentException("wrong number of closure params: "+types.length);
-        if (!types[0].isAssignableFrom(Event.class)) {
-            throw new IllegalArgumentException("wrong type of closure param: "+types[0]+", expected: "+Event.class);
+        if (!Event.class.isAssignableFrom(types[0])) {
+            throw new IllegalArgumentException("wrong type of closure param: "+types[0].getName()+", expected: "+Event.class.getName());
         }
         BukkitEventTrigger trigger = new BukkitEventTrigger(workspace, triggers, types[0], priority, false);
         trigger.setHandler(closure);
@@ -175,13 +181,13 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
     }
 
     @Override
-    public ShutdownHookTrigger shutdownHook(){
-        return new ShutdownHookTrigger(workspace, triggers);
+    public StopHookTrigger stopHook(){
+        return new StopHookTrigger(workspace, triggers);
     }
 
     @Override
-    public ShutdownHookTrigger shutdownHook(Closure closure){
-        return shutdownHook().call(closure);
+    public StopHookTrigger stopHook(Closure closure){
+        return stopHook().call(closure);
     }
 
     @Override

@@ -1,18 +1,19 @@
 package ru.dpohvar.varscript.trigger;
 
 import groovy.lang.Closure;
+import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.util.Set;
 
-public class ShutdownHookTrigger implements Trigger, Runnable {
+public class StopHookTrigger implements Trigger, Runnable {
 
     private boolean stopped;
     private Closure handler;
     private final Workspace workspace;
     private final Set<Trigger> parentTriggers;
 
-    public ShutdownHookTrigger(Workspace workspace, Set<Trigger> parentTriggers){
+    public StopHookTrigger(Workspace workspace, Set<Trigger> parentTriggers){
         this.workspace = workspace;
         this.parentTriggers = parentTriggers;
         parentTriggers.add(this);
@@ -26,7 +27,7 @@ public class ShutdownHookTrigger implements Trigger, Runnable {
         this.handler = handler;
     }
 
-    public ShutdownHookTrigger call(Closure closure){
+    public StopHookTrigger call(Closure closure){
         setHandler(closure);
         return this;
     }
@@ -51,7 +52,12 @@ public class ShutdownHookTrigger implements Trigger, Runnable {
 
     @Override
     public void run() {
-        if (handler != null) handler.call();
+        if (handler != null) try {
+            handler.call();
+        } catch (Throwable t) {
+            Caller caller = workspace.getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
+            caller.sendThrowable(t, workspace.getName());
+        }
     }
 }
 

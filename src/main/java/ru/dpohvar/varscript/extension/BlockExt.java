@@ -326,6 +326,10 @@ public class BlockExt {
         return minus(self, val.getLocation());
     }
 
+    public static Location plus(Block self, Vector val){
+        return getLoc(self).add(val);
+    }
+
     // block-specific
 
     public static int getId(Block self){

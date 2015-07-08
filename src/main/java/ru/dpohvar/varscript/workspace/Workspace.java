@@ -2,7 +2,6 @@ package ru.dpohvar.varscript.workspace;
 
 import groovy.lang.*;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -40,7 +39,7 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         List<CompilationCustomizer> compilationCustomizers = compilerConfiguration.getCompilationCustomizers();
         compilerConfiguration.getClasspath().addAll(workspaceService.getClassPath());
         compilationCustomizers.addAll(workspaceService.getCompilationCustomizers());
-        groovyClassLoader = new GroovyClassLoader(VarScript.pluginClassLoader, compilerConfiguration);
+        groovyClassLoader = new GroovyClassLoader(VarScript.libLoader, compilerConfiguration);
     }
 
     public WorkspaceService getWorkspaceService() {
@@ -70,11 +69,10 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     public Object doAutorun(){
         if (!autorunFile.isFile()) return null;
         VarScript plugin = workspaceService.getVarScript();
-        ConsoleCommandSender sender = plugin.getServer().getConsoleSender();
-        Caller caller = plugin.getCallerService().getCaller(sender);
+        Caller caller = plugin.getCallerService().getConsoleCaller();
         try {
             return executeScript(caller, autorunFile, null);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             caller.sendThrowable(e, this.getName());
             return null;
         }
@@ -245,13 +243,13 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     }
 
     @Override
-    public ShutdownHookTrigger shutdownHook(){
-        return new ShutdownHookTrigger(this, triggers);
+    public StopHookTrigger stopHook(){
+        return new StopHookTrigger(this, triggers);
     }
 
     @Override
-    public ShutdownHookTrigger shutdownHook(Closure closure){
-        return shutdownHook().call(closure);
+    public StopHookTrigger stopHook(Closure closure){
+        return stopHook().call(closure);
     }
 
     @Override
@@ -319,7 +317,11 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         disabled = true;
         for (Trigger trigger : getTriggers()) {
             trigger.stop();
-            if (trigger instanceof ShutdownHookTrigger) ((ShutdownHookTrigger) trigger).run();
+            if (trigger instanceof StopHookTrigger) try {
+                ((StopHookTrigger) trigger).run();
+            } catch (Exception e) {
+                getWorkspaceService().getVarScript().getCallerService().getConsoleCaller().sendThrowable(e, name);
+            }
         }
         disabled = removed;
     }

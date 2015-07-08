@@ -92,4 +92,20 @@ public class CallerScriptExt {
         ((Entity) self.getMe()).teleport(block.getLocation().add(0.5,0,0.5));
     }
 
+    public static <T extends Entity> T tphere(CallerScript self, T entity){
+        Object me = self.getMe();
+        Location loc = (Location) InvokerHelper.getProperty(me, "location");
+        entity.teleport(loc);
+        return entity;
+    }
+
+    public static Entity id(CallerScript self, int id) throws IllegalArgumentException{
+        for (World world : self.getServer().getWorlds()) {
+            for (Entity entity : world.getEntities()) {
+                if (entity.getEntityId() == id) return entity;
+            }
+        }
+        throw new IllegalArgumentException("no entity with id "+id);
+    }
+
 }

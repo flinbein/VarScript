@@ -7,14 +7,11 @@ main: ru.dpohvar.varscript.VarScript
 softdepend: [PowerNBT]
 
 commands:
-  '>':
+  script:
     description: run code
-    aliases: [g>]
+    aliases: ['>', g>]
     permission: varscript.run
-  'ivy':
-    description: manage ivy dependencies
-    permission: varscript.ivy
-  'workspace':
+  workspace:
     description: manage workspaces
     aliases: [workspaces, ws]
     permission: varscript.workspace

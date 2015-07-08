@@ -123,7 +123,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         WorkspaceService service = plugin.getWorkspaceService();
         String workspaceName = service.getWorkspaceName(caller.getSender());
         service.setWorkspaceName(caller.getSender(), newName);
-        caller.sendMessage("new workspace set:" + newName, workspaceName);
+        caller.sendMessage("new workspace set: " + newName, workspaceName);
         return true;
     }
 

@@ -27,5 +27,10 @@
             -->
 
         </chain>
+
+        <chain name="downloadGrapes">
+            <resolver ref="default"/>
+        </chain>
+
     </resolvers>
 </ivysettings>

@@ -5,16 +5,16 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import ru.dpohvar.varscript.VarScript;
-import ru.dpohvar.varscript.modifier.ImportVersionASTTransformation;
-import ru.dpohvar.varscript.modifier.SourceASTTransformationCustomizer;
+import ru.dpohvar.varscript.boot.BootHelper;
+import ru.dpohvar.varscript.boot.VarScriptClassLoader;
+import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.utils.FileTime;
-
-import org.bukkit.entity.*;
-import org.bukkit.block.*;
 
 import java.io.File;
 import java.util.*;
@@ -49,7 +49,7 @@ public class WorkspaceService extends GroovyObjectSupport {
         return sender.getName();
     }
 
-    private VarScript VarScript;
+    private VarScript varscript;
 
     private final File autorunDirectory;
     private final File scriptsDirectory;
@@ -58,153 +58,55 @@ public class WorkspaceService extends GroovyObjectSupport {
     private final List<String> classPath = new LinkedList<String>();
     private final List<GroovyObject> dynamicModifiers = new ArrayList<GroovyObject>();
     private final Map<FileTime,Class> compiledFileTimeCache = new WeakHashMap<FileTime, Class>();
+    private final Map<String,Class> importTabCompleteClasses = new HashMap<String, Class>();
 
     private Binding binding = new Binding();
 
-    private static void fillImports(ImportCustomizer customizer, Class... classes){
-        for (Class clazz : classes) {
-            customizer.addImport(clazz.getSimpleName(), clazz.getName());
-        }
+    private static String getClassShortName(String className){
+        return className.substring(className.lastIndexOf('.')+1);
     }
 
-    public WorkspaceService(VarScript VarScript){
-        this.VarScript = VarScript;
-        this.autorunDirectory = new File(VarScript.getDataFolder(), "autorun");
-        this.scriptsDirectory = new File(VarScript.getDataFolder(), "scripts");
+    public WorkspaceService(VarScript varscript){
+        VarScriptClassLoader libLoader = VarScript.libLoader;
+        this.varscript = varscript;
+        FileConfiguration config = varscript.getConfig();
+        this.autorunDirectory = new File(config.getString("autorun"));
+        this.scriptsDirectory = new File(config.getString("scripts"));
         ImportCustomizer importCustomizer = new ImportCustomizer();
         compilationCustomizers.add(importCustomizer);
-        ImportVersionASTTransformation astTransformation = new ImportVersionASTTransformation();
-        CompilationCustomizer nmsCustomizer = new SourceASTTransformationCustomizer(astTransformation);
-        compilationCustomizers.add(nmsCustomizer);
         importCustomizer.addImport("Vector", "org.bukkit.util.Vector");
-        fillImports( importCustomizer,
-                Ageable.class,
-                Ambient.class,
-                Animals.class,
-                AnimalTamer.class,
-                ArmorStand.class,
-                Arrow.class,
-                Bat.class,
-                Blaze.class,
-                Boat.class,
-                CaveSpider.class,
-                Chicken.class,
-                ComplexEntityPart.class,
-                ComplexLivingEntity.class,
-                Cow.class,
-                Creature.class,
-                Creeper.class,
-                Damageable.class,
-                Egg.class,
-                EnderCrystal.class,
-                EnderDragon.class,
-                EnderDragonPart.class,
-                Enderman.class,
-                Endermite.class,
-                EnderPearl.class,
-                EnderSignal.class,
-                Entity.class,
-                EntityType.class,
-                ExperienceOrb.class,
-                Explosive.class,
-                FallingBlock.class,
-                Fireball.class,
-                Firework.class,
-                FishHook.class,
-                Flying.class,
-                Ghast.class,
-                Giant.class,
-                Golem.class,
-                Guardian.class,
-                Hanging.class,
-                Horse.class,
-                HumanEntity.class,
-                IronGolem.class,
-                Item.class,
-                ItemFrame.class,
-                LargeFireball.class,
-                LeashHitch.class,
-                LightningStrike.class,
-                LivingEntity.class,
-                MagmaCube.class,
-                Minecart.class,
-                Monster.class,
-                MushroomCow.class,
-                NPC.class,
-                Ocelot.class,
-                Painting.class,
-                Pig.class,
-                PigZombie.class,
-                Player.class,
-                Projectile.class,
-                Rabbit.class,
-                Sheep.class,
-                Silverfish.class,
-                Skeleton.class,
-                Slime.class,
-                SmallFireball.class,
-                Snowball.class,
-                Snowman.class,
-                Spider.class,
-                Squid.class,
-                Tameable.class,
-                ThrownExpBottle.class,
-                ThrownPotion.class,
-                TNTPrimed.class,
-                Vehicle.class,
-                Villager.class,
-                WaterMob.class,
-                Weather.class,
-                Witch.class,
-                Wither.class,
-                WitherSkull.class,
-                Wolf.class,
-                Zombie.class,
-                Beacon.class,
-                Biome.class,
-                Block.class,
-                BlockFace.class,
-                BlockState.class,
-                BrewingStand.class,
-                CommandBlock.class,
-                ContainerBlock.class,
-                CreatureSpawner.class,
-                DoubleChest.class,
-                Dropper.class,
-                Hopper.class,
-                Jukebox.class,
-                NoteBlock.class,
-                PistonMoveReaction.class
-        );
-//        importCustomizer.addStarImports(
-//                "org.bukkit",
-//                "org.bukkit.block",
-//                "org.bukkit.enchantments",
-//                "org.bukkit.entity",
-//                "org.bukkit.entity.minecart",
-//                "org.bukkit.event",
-//                "org.bukkit.event.block",
-//                "org.bukkit.event.enchantment",
-//                "org.bukkit.event.entity",
-//                "org.bukkit.event.hanging",
-//                "org.bukkit.event.inventory",
-//                "org.bukkit.event.painting",
-//                "org.bukkit.event.player",
-//                "org.bukkit.event.server",
-//                "org.bukkit.event.vehicle",
-//                "org.bukkit.event.weather",
-//                "org.bukkit.event.world",
-//                "org.bukkit.inventory",
-//                "org.bukkit.inventory.meta",
-//                "org.bukkit.material",
-//                "org.bukkit.metadata",
-//                "org.bukkit.permissions",
-//                "org.bukkit.plugin",
-//                "org.bukkit.potion",
-//                "org.bukkit.projectiles",
-//                "org.bukkit.scoreboard",
-//                "org.bukkit.util"
-//        );
+        importCustomizer.addImport("BlockVector", "org.bukkit.util.BlockVector");
+        importCustomizer.addImport("EventPriority", "org.bukkit.event.EventPriority");
+        for (Map<?, ?> anImport : config.getMapList("import")) {
+            Object scanPackageValue = anImport.get("scan-package");
+            String aScanPackage = scanPackageValue != null ? scanPackageValue.toString() : null;
+            if (aScanPackage != null) {
+                Object recursiveFlag = anImport.get("recursive");
+                Object maskFlag = anImport.get("mask");
+                boolean recursive = recursiveFlag != null && recursiveFlag.equals(true);
+                String mask = maskFlag instanceof String ? (String) maskFlag : null;
+                for (String cName : BootHelper.getClassNamesFromPackage(aScanPackage, recursive)) {
+                    if (mask != null && !cName.matches(mask)) continue;
+                    importCustomizer.addImport( getClassShortName(cName), cName);
+                    try {
+                        importTabCompleteClasses.put(getClassShortName(cName), libLoader.loadClass(cName));
+                    } catch (ClassNotFoundException ignored) {}
+                }
+            }
+            Object classValue = anImport.get("class");
+            String aClass = classValue != null ? classValue.toString() : null;
+            if (aClass != null) {
+                Object aliasFlag = anImport.get("as");
+                String alias = aliasFlag != null ? aliasFlag.toString() : getClassShortName(aClass);
+                importCustomizer.addImport(alias, aClass);
+                try {
+                    importTabCompleteClasses.put(alias, libLoader.loadClass(aClass));
+                } catch (ClassNotFoundException ignored) {}
+            }
+            Object packageValue = anImport.get("package");
+            String aPackage = packageValue != null ? packageValue.toString() : null;
+            if (aPackage != null) importCustomizer.addStarImports(aPackage);
+        }
         classPath.add(scriptsDirectory.toString());
     }
 
@@ -222,7 +124,7 @@ public class WorkspaceService extends GroovyObjectSupport {
     }
 
     public VarScript getVarScript() {
-        return VarScript;
+        return varscript;
     }
 
     public File getScriptsDirectory() {
@@ -246,16 +148,16 @@ public class WorkspaceService extends GroovyObjectSupport {
     }
 
     public String getWorkspaceName(CommandSender sender){
-        FileConfiguration config = VarScript.getConfig();
+        FileConfiguration config = varscript.getConfig();
         String workspaceName = config.getString("workspace." + sender.getName());
         if (workspaceName != null) return workspaceName;
         else return sender.getName();
     }
 
     public void setWorkspaceName(CommandSender sender, String workspaceName){
-        FileConfiguration config = VarScript.getConfig();
+        FileConfiguration config = varscript.getConfig();
         config.set("workspace." + sender.getName(), workspaceName);
-        VarScript.saveConfig();
+        varscript.saveConfig();
     }
 
     public Workspace getWorkspace(String workspaceName) {
@@ -271,7 +173,11 @@ public class WorkspaceService extends GroovyObjectSupport {
         if (workspace != null) return workspace;
         workspace = new Workspace(this, workspaceName);
         workspaceMap.put(workspaceName, workspace);
-        workspace.doAutorun();
+        Object result = workspace.doAutorun();
+        if (result != null) {
+            Caller caller = varscript.getCallerService().getConsoleCaller();
+            caller.sendMessage(DefaultGroovyMethods.toString(result), workspaceName);
+        }
         return workspace;
     }
 
@@ -286,6 +192,10 @@ public class WorkspaceService extends GroovyObjectSupport {
         Collection<Workspace> values = workspaceMap.values();
         Workspace[] result = new Workspace[values.size()];
         return values.toArray(result);
+    }
+
+    public Map<String, Class> getImportTabCompleteClasses() {
+        return importTabCompleteClasses;
     }
 
     @Override

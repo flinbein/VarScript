@@ -1,7 +1,6 @@
 package ru.dpohvar.varscript.boot;
 
 import groovy.grape.Grape;
-import groovy.grape.GrapeEngine;
 import groovy.grape.GrapeIvy;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaMethod;
@@ -23,6 +22,8 @@ import java.lang.reflect.Method;
 import java.net.*;
 import java.text.ParseException;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 
 public class BootHelper {
@@ -49,18 +50,20 @@ public class BootHelper {
      * @return Ivy instance
      */
     public static Ivy prepareIvy(){
+        ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
+        VarScriptClassLoader libLoader = VarScript.libLoader;
 
         if (ivy != null) return ivy;
         try {
-            Class.forName("org.apache.ivy.Ivy");
+            libLoader.loadClass("org.apache.ivy.Ivy");
         } catch (ClassNotFoundException ignored) {
             File configFile = new File(VarScript.dataFolder, "config.yml");
             Map config;
             if (configFile.isFile()) config = readYaml(configFile);
-            else config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+            else config = readYaml(resourceClassLoader.getResource("config.yml"));
             Map ivySettings = (Map) config.get("ivy");
             if (ivySettings == null) {
-                config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+                config = readYaml(resourceClassLoader.getResource("config.yml"));
                 ivySettings = (Map) config.get("ivy");
             }
             File ivyJarFile = new File((String) ivySettings.get("jar"));
@@ -68,7 +71,7 @@ public class BootHelper {
                 String ivyDownloadURL = (String) ivySettings.get("download-url");
                 downloadIvyJar(ivyDownloadURL, ivyJarFile);
             }
-            addFileToClassLoader(VarScript.pluginClassLoader, ivyJarFile);
+            libLoader.addLibFile(ivyJarFile, VarScriptClassLoader.TO_PARENT);
         }
 
         ivy = new Ivy();
@@ -77,7 +80,7 @@ public class BootHelper {
         File ivySettingsXmlFile = new File(VarScript.dataFolder, "ivysettings.xml");
         try {
             if (ivySettingsXmlFile.isFile()) settings.load(ivySettingsXmlFile);
-            else settings.load(VarScript.pluginClassLoader.getResource("ivysettings.xml"));
+            else settings.load(resourceClassLoader.getResource("ivysettings.xml"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -99,11 +102,12 @@ public class BootHelper {
      * Download (if needed) and load all dependencies from ivy.xml of this plugin
      */
     public static void loadSelfDependencies(){
+        ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
         File ivyXmlFile = new File(VarScript.dataFolder, "ivy.xml");
         try {
             ResolveReport report;
             if (ivyXmlFile.isFile()) report = resolveIvy(ivyXmlFile);
-            else report = resolveIvy(VarScript.pluginClassLoader.getResource("ivy.xml"));
+            else report = resolveIvy(resourceClassLoader.getResource("ivy.xml"));
             loadReportedArtifacts(report, VarScript.pluginName);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -111,23 +115,26 @@ public class BootHelper {
     }
 
     public static void loadLibraries(){
+        ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
+        VarScriptClassLoader libLoader = VarScript.libLoader;
         File configFile = new File(VarScript.dataFolder, "config.yml");
         Map config;
         if (configFile.isFile()) config = readYaml(configFile);
-        else config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+        else config = readYaml(VarScript.class.getClassLoader().getResource("config.yml"));
         Object librariesValue = config.get("libraries");
         if (librariesValue == null) {
-            config = readYaml(VarScript.pluginClassLoader.getResource("config.yml"));
+            config = readYaml(resourceClassLoader.getResource("config.yml"));
             librariesValue = config.get("libraries");
         }
         if (librariesValue instanceof String && !((String) librariesValue).isEmpty()) {
             File librariesFolder = new File((String) librariesValue);
             File[] files = librariesFolder.listFiles();
+            if (!librariesFolder.exists()) librariesFolder.mkdirs();
             if (!librariesFolder.isDirectory()) return;
-            addFileToClassLoader(VarScript.pluginClassLoader, librariesFolder);
+            libLoader.addLibFile(librariesFolder);
             if (files != null) for (File file : files) {
                 if (file.getName().toLowerCase().endsWith(".jar")) {
-                    addFileToClassLoader(VarScript.pluginClassLoader, file);
+                    libLoader.addLibFile(file, VarScriptClassLoader.TO_SELF);
                 }
             }
         }
@@ -207,7 +214,7 @@ public class BootHelper {
         InputStream is = null;
         try{
             fos = new FileOutputStream(file);
-            is = VarScript.pluginClassLoader.getResourceAsStream(resource);
+            is = VarScript.class.getClassLoader().getResourceAsStream(resource);
             if (is != null) pipe(is, fos, 0x100);
         } catch (IOException e) {
             throw new RuntimeException("Can not copy resource "+resource,e);
@@ -243,38 +250,6 @@ public class BootHelper {
     }
 
     static Yaml yaml = new Yaml();
-
-    /**
-     * Add url to classloader
-     *
-     * @param classLoader classLoader
-     * @param url url
-     */
-    private static void addURLToClassLoader(ClassLoader classLoader, URL url) {
-        try {
-            URL[] urls = (URL[]) getURLs.invoke(classLoader);
-            for (URL t: urls) if (url.equals(t)) return;
-            addURL.invoke(classLoader, url);
-        } catch (Exception e) {
-            throw new RuntimeException("Error on load "+url,e);
-        }
-    }
-
-    /**
-     * Add jar file to classloader
-     *
-     * @param classLoader classLoader
-     * @param file jar file
-     */
-    public static void addFileToClassLoader(ClassLoader classLoader, File file) {
-        URL url;
-        try {
-            url = file.toURI().toURL();
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid file: "+file,e);
-        }
-        addURLToClassLoader(classLoader, url);
-    }
 
     /**
      * Check all plugins for ivy dependencies
@@ -333,14 +308,15 @@ public class BootHelper {
      * @param pluginName name of plugin
      */
     public static void loadReportedArtifacts(ResolveReport report, String pluginName){
-            if (report.hasError()){
-                List problems = report.getAllProblemMessages();
-                String message = "Error on load dependencies of "+ pluginName +"\n" + problems;
-                Bukkit.getLogger().log(Level.WARNING, VarScript.pluginName+": " +message);
-            }
-            for (ArtifactDownloadReport r: report.getAllArtifactsReports()) {
-                addFileToClassLoader(VarScript.pluginClassLoader, r.getLocalFile());
-            }
+        VarScriptClassLoader libLoader = VarScript.libLoader;
+        if (report.hasError()){
+            List problems = report.getAllProblemMessages();
+            String message = "Error on load dependencies of "+ pluginName +"\n" + problems;
+            Bukkit.getLogger().log(Level.WARNING, VarScript.pluginName+": " +message);
+        }
+        for (ArtifactDownloadReport r: report.getAllArtifactsReports()) {
+            libLoader.addLibFile(r.getLocalFile(), VarScriptClassLoader.TO_PARENT);
+        }
     }
 
     /**
@@ -474,6 +450,45 @@ public class BootHelper {
      */
     public static ResolveReport resolveIvy(String mrId, String conf) throws IOException, ParseException {
         return resolveIvy(ModuleRevisionId.parse(mrId), conf);
+    }
+
+    /**
+     * Scan class names in package
+     * @param packageName name
+     * @return class names in package
+     */
+    public static ArrayList<String> getClassNamesFromPackage(String packageName, boolean recursive) {
+        ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
+        URL packageURL;
+        ArrayList<String> names = new ArrayList<String>();
+
+        packageName = packageName.replace('.','/');
+        if (!packageName.endsWith("/")) packageName += '/';
+        packageURL = resourceClassLoader.getResource(packageName);
+
+        if( packageURL != null && packageURL.getProtocol().equals("jar")) try {
+            // build jar file name, then loop through zipped entries
+            String jarFileName = URLDecoder.decode(packageURL.getFile(), "UTF-8");
+            jarFileName = jarFileName.substring(5,jarFileName.indexOf("!"));
+            JarFile jf = new JarFile(jarFileName);
+            Enumeration<JarEntry> jarEntries = jf.entries();
+            while (jarEntries.hasMoreElements()){
+                JarEntry entry = jarEntries.nextElement();
+                if (entry.isDirectory()) continue;
+                String entryName = entry.getName();
+                if (!entryName.startsWith(packageName)) continue;
+                if (!entryName.endsWith(".class")) continue;
+                if (entryName.contains("$")) continue;
+                if (!recursive) {
+                    String end = entryName.substring(packageName.length());
+                    if (end.contains("/")) continue;
+                }
+                String name = entryName.substring(0,entryName.length()-6);
+                String className = name.replace('/','.');
+                names.add(className);
+            }
+        } catch (IOException ignored) {};
+        return names;
     }
 
 

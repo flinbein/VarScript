@@ -11,6 +11,7 @@ public class BoxArea extends Region {
     protected double x1, z1;
     protected double x2, z2;
     protected World world;
+    protected List<Block> blockCache;
 
     public BoxArea(Location locA, Location locB) {
         x1 = locA.getX();
@@ -64,6 +65,11 @@ public class BoxArea extends Region {
 
     @Override
     public List<Block> getBlocks() {
+        if (blockCache == null) blockCache = getBlocks0();
+        return new ArrayList<Block>(blockCache);
+    }
+
+    protected List<Block> getBlocks0() {
         List<Block> blocks = new ArrayList<Block>();
         int xa = (int) Math.floor(x1), za = (int) Math.floor(z1);
         int xb = (int) Math.floor(x2), zb = (int) Math.floor(z2);

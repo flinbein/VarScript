@@ -14,14 +14,16 @@ import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.caller.FlushTask;
 import ru.dpohvar.varscript.utils.PropertySelector;
+import ru.dpohvar.varscript.utils.ScriptProperties;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-public abstract class CallerScript extends Script {
+public abstract class CallerScript extends Script implements ScriptProperties {
 
     private Caller caller;
     private Workspace workspace;
@@ -34,14 +36,6 @@ public abstract class CallerScript extends Script {
 
     public static List<GroovyObject> getDynamicModifiers() {
         return dynamicModifiers;
-    }
-
-    public Caller getCaller() {
-        return caller;
-    }
-
-    public Workspace getWorkspace() {
-        return workspace;
     }
 
     public CallerScript initializeScript(Workspace workspace, Caller caller, Binding binding){
@@ -57,20 +51,34 @@ public abstract class CallerScript extends Script {
         return this;
     }
 
+    @Override
+    public Caller getCaller() {
+        return caller;
+    }
+
+    @Override
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+
+    @Override
     public Object getMe(){
         CommandSender sender = caller.getSender();
         if (sender instanceof BlockCommandSender) return ((BlockCommandSender) sender).getBlock();
         else return sender;
     }
 
+    @Override
     public Object get_(){
         return caller.getLastResult();
     }
 
+    @Override
     public Server getServer(){
         return server;
     }
 
+    @Override
     public WorkspaceService getGlobal(){
         return workspace.getWorkspaceService();
     }
@@ -246,7 +254,7 @@ public abstract class CallerScript extends Script {
         workspace.getBinding().setVariable(property, newValue);
     }
 
-    public Object getPropertyFor(CallerScript script, String property){
+    public static Object getPropertyFor(ScriptProperties script, String property){
         Object args = new Object[]{script, property};
         for (GroovyObject modifier : dynamicModifiers) try {
             return modifier.getMetaClass().invokeMethod(modifier, "getPropertyFor", args);
@@ -256,7 +264,7 @@ public abstract class CallerScript extends Script {
         throw PropertySelector.next;
     }
 
-    public Object invokeMethodFor(CallerScript script, String name, Object[] args){
+    public static Object invokeMethodFor(ScriptProperties script, String name, Object[] args){
         Object arguments = new Object[]{script, name, args};
         for (GroovyObject modifier : dynamicModifiers) try {
             return InvokerHelper.invokeMethod(modifier, "invokeMethodFor", arguments);

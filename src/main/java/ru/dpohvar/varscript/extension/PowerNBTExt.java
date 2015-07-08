@@ -1,10 +1,15 @@
 package ru.dpohvar.varscript.extension;
 
 import groovy.lang.Closure;
+import me.dpohvar.powernbt.PowerNBT;
 import me.dpohvar.powernbt.api.NBTCompound;
+import me.dpohvar.powernbt.api.NBTList;
 import me.dpohvar.powernbt.api.NBTManager;
+import me.dpohvar.powernbt.nbt.NBTBase;
+import me.dpohvar.powernbt.utils.NBTUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import ru.dpohvar.varscript.extension.nbt.NBTCompoundProperties;
@@ -13,6 +18,7 @@ import ru.dpohvar.varscript.workspace.CallerScript;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 
 public class PowerNBTExt {
@@ -273,6 +279,17 @@ public class PowerNBTExt {
         return result;
     }
 
+    public static Object getNbtClipboard(CommandSender self) throws IOException {
+        NBTBase nbt = PowerNBT.plugin.getCaller(self).getTag();
+        return nbt == null ? null : NBTUtils.nbtUtils.getValue(nbt.getHandle());
+    }
+
+    public static void setNbtClipboard(CommandSender self, Object value) throws IOException {
+        Object tag = NBTUtils.nbtUtils.createTag(value);
+        NBTBase nbt = NBTBase.wrap(tag);
+        PowerNBT.plugin.getCaller(self).setTag(nbt);
+    }
+
     // caller script
 
     public static NBTCompound nbt(CallerScript self, Entity container) {
@@ -390,6 +407,26 @@ public class PowerNBTExt {
 
     public static Object nbt(CallerScript self, String value) throws IOException {
         return getNbt(value);
+    }
+
+    public static Object nbt(CallerScript self, Collection value) throws IOException {
+        return new NBTList(value);
+    }
+
+    public static Object nbt(CallerScript self, Map value) throws IOException {
+        return new NBTCompound(value);
+    }
+
+    public static Object nbt(CallerScript self, Object[] value) throws IOException {
+        return new NBTList(value);
+    }
+
+    public static Object getNbtClipboard(CallerScript self) throws IOException {
+        return getNbtClipboard(self.getCaller().getSender());
+    }
+
+    public static void setNbtClipboard(CallerScript self, Object value) throws IOException {
+        setNbtClipboard(self.getCaller().getSender(), value);
     }
 
 }

@@ -48,9 +48,9 @@ public interface TriggerGenerator {
 
     public BukkitIntervalTrigger interval(long interval, Closure handler);
 
-    public ShutdownHookTrigger shutdownHook();
+    public StopHookTrigger stopHook();
 
-    public ShutdownHookTrigger shutdownHook(Closure closure);
+    public StopHookTrigger stopHook(Closure closure);
 
     public CommandTrigger command(String name, String description, String usage, List<String> aliases);
 

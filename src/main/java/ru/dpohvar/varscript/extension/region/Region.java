@@ -122,6 +122,18 @@ public abstract class Region implements Cloneable, Iterable<Block> {
         return result;
     }
 
+    public boolean isCase(Block block){
+        return contains(block);
+    }
+
+    public boolean isCase(Location location){
+        return contains(location);
+    }
+
+    public boolean isCase(Entity entity){
+        return contains(entity);
+    }
+
     @Override
     public Iterator<Block> iterator() {
         return getBlocks().iterator();
