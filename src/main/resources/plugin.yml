@@ -1,0 +1,17 @@
+name: ${project.artifactId}
+version: ${project.version}
+description: ${plugin-description}
+author: ${plugin-author}
+database: false
+main: ru.dpohvar.varscript.VarScript
+softdepend: [PowerNBT]
+
+commands:
+  script:
+    description: run code
+    aliases: ['>', g>]
+    permission: varscript.run
+  workspace:
+    description: manage workspaces
+    aliases: [workspaces, ws]
+    permission: varscript.workspace

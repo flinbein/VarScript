@@ -1,0 +1,22 @@
+moduleName=varscript-ext
+moduleVersion=${plugin-version}
+extensionClasses=\
+  ru.dpohvar.varscript.extension.BlockExt,\
+  ru.dpohvar.varscript.extension.CallerScriptExt,\
+  ru.dpohvar.varscript.extension.CharSequenceExt,\
+  ru.dpohvar.varscript.extension.CollectionExt,\
+  ru.dpohvar.varscript.extension.CommandSenderExt,\
+  ru.dpohvar.varscript.extension.DamageableExt,\
+  ru.dpohvar.varscript.extension.EntityExt,\
+  ru.dpohvar.varscript.extension.HumanEntityExt,\
+  ru.dpohvar.varscript.extension.InventoryHolderExt,\
+  ru.dpohvar.varscript.extension.ItemStackExt,\
+  ru.dpohvar.varscript.extension.LivingEntityExt,\
+  ru.dpohvar.varscript.extension.LocationExt,\
+  ru.dpohvar.varscript.extension.MaterialExt,\
+  ru.dpohvar.varscript.extension.PlayerExt,\
+  ru.dpohvar.varscript.extension.PowerNBTExt,\
+  ru.dpohvar.varscript.extension.VectorExt,\
+  ru.dpohvar.varscript.extension.WorldExt
+staticExtensionClasses=\
+  ru.dpohvar.varscript.extension.WorldStaticExt

@@ -1,0 +1,24 @@
+ivy:
+  download-url: http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy-version}/ivy-${ivy-version}.jar
+  jar: plugins/${project.artifactId}/ivy/ivy-${ivy-version}.jar
+  cache: plugins/${project.artifactId}/ivy
+libraries: plugins/${project.artifactId}/lib
+classpath: plugins/${project.artifactId}/scripts
+scripts: plugins/${project.artifactId}/scripts
+autorun: plugins/${project.artifactId}/autorun
+import:
+- scan-package: org.bukkit
+- scan-package: org.bukkit.block
+- scan-package: org.bukkit.command
+- scan-package: org.bukkit.entity
+- scan-package: org.bukkit.event
+  recursive: true
+  mask: .*Event
+- scan-package: org.bukkit.inventory
+- scan-package: org.bukkit.map
+- scan-package: org.bukkit.projectiles
+- scan-package: org.bukkit.scoreboard
+- class: org.bukkit.util.Vector
+- class: org.bukkit.util.BlockVector
+- class: org.bukkit.event.EventPriority
+- class: org.bukkit.util.EulerAngle
