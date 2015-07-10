@@ -180,7 +180,7 @@ public class BlockExt {
 
     // spawn
 
-    public static Entity spawn(Block self, Class type){
+    public static <T extends Entity> T spawn(Block self, Class<T> type){
         Location loc = getLoc(self);
         return loc.getWorld().spawn(loc, type);
     }
