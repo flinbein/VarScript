@@ -77,7 +77,7 @@ public class Caller {
         String message = e.getLocalizedMessage();
         if (message == null) message = e.getMessage();
         if (message == null) message = e.toString();
-        if (plugin.getConfig().getBoolean("debug")) {
+        if (plugin.isDebug()) {
             plugin.getLogger().log(Level.WARNING, source, e);
         }
         sendErrorMessage(RED + e.getClass().getSimpleName() + RESET + "\n" + message, source);

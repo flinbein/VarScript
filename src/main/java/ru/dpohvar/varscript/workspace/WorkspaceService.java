@@ -208,6 +208,10 @@ public class WorkspaceService extends GroovyObjectSupport {
         binding.setVariable(property, newValue);
     }
 
+    public void removeProperty(String variable){
+        binding.getVariables().remove(variable);
+    }
+
     @Override
     public Object invokeMethod(String name, Object args) {
         Object[] arguments;

@@ -171,7 +171,7 @@ public class LocationExt {
 
     // spawn
 
-    public static Entity spawn(Location self, Class type){
+    public static <T extends Entity> T spawn(Location self, Class<T> type){
         Location loc = getLoc(self);
         return loc.getWorld().spawn(loc, type);
     }

@@ -134,7 +134,7 @@ public class BootHelper {
             libLoader.addLibFile(librariesFolder);
             if (files != null) for (File file : files) {
                 if (file.getName().toLowerCase().endsWith(".jar")) {
-                    libLoader.addLibFile(file, VarScriptClassLoader.TO_SELF);
+                    libLoader.addLibFile(file, VarScriptClassLoader.TO_PARENT);
                 }
             }
         }

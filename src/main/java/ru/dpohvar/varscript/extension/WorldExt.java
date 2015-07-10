@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.List;
 
@@ -21,8 +22,14 @@ public class WorldExt {
         return val.getWorld().equals(self);
     }
 
-    public static Location getAt(World self, List<Double> pos){
-        return new Location(self, pos.get(0), pos.get(1),pos.get(2));
+    public static Location getAt(World self, List pos){
+        Object p0 = DefaultGroovyMethods.getAt(pos, 0);
+        Object p1 = DefaultGroovyMethods.getAt(pos, 1);
+        Object p2 = DefaultGroovyMethods.getAt(pos, 2);
+        Double x = DefaultGroovyMethods.asType(p0, double.class);
+        Double y = DefaultGroovyMethods.asType(p1, double.class);
+        Double z = DefaultGroovyMethods.asType(p2, double.class);
+        return new Location(self, x, y, z);
     }
 
     public static Block call(World self, int x, int y, int z){
