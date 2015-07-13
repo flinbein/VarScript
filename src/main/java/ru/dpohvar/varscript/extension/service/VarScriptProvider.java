@@ -100,7 +100,7 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         catch (PropertySelector ignored) {}
         if (script instanceof CallerScript) {
             File scriptFile = new File(scriptDirectory, property + ".groovy");
-            if (scriptFile.isFile()) return ((CallerScript) script).runFileScript(scriptFile);
+            if (scriptFile.isFile()) return ((CallerScript) script).runScriptFile(scriptFile);
         }
         Player player = server.getPlayerExact(property);
         if (player != null) return player;
@@ -114,7 +114,7 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
     public Object invokeMethodFor(ScriptProperties script, String name, Object[] args) throws Exception {
         if (script instanceof CallerScript) {
             File scriptFile = new File(scriptDirectory, name + ".groovy");
-            if (scriptFile.isFile()) return ((CallerScript) script).runFileScript(scriptFile, args);
+            if (scriptFile.isFile()) return ((CallerScript) script).runScriptFile(scriptFile, args);
         }
         throw PropertySelector.next;
     }

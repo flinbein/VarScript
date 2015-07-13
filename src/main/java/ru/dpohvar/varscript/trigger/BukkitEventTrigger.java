@@ -26,7 +26,7 @@ public class BukkitEventTrigger<T extends Event> implements Trigger, Listener, E
     private final HandlerList handlerList;
     private final RegisteredListener registeredListener;
 
-    public BukkitEventTrigger(Workspace workspace, Set<Trigger> parentTriggers, Class<T> eventClass, EventPriority priority, boolean ignoreCancelled){
+    public BukkitEventTrigger(Workspace workspace, Set<Trigger> parentTriggers, Class<? extends T> eventClass, EventPriority priority, boolean ignoreCancelled){
         this.workspace = workspace;
         this.eventClass = eventClass;
         this.parentTriggers = parentTriggers;

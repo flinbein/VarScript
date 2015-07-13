@@ -63,6 +63,10 @@ public class LivingEntityExt {
         return self.getEquipment().getLeggings();
     }
 
+    public static ItemStack getPants(LivingEntity self) {
+        return self.getEquipment().getLeggings();
+    }
+
     public static ItemStack getHand(LivingEntity self) {
         return self.getEquipment().getItemInHand();
     }
@@ -80,6 +84,10 @@ public class LivingEntityExt {
     }
 
     public static void setLegs(LivingEntity self, ItemStack item) {
+        self.getEquipment().setLeggings(item);
+    }
+
+    public static void setPants(LivingEntity self, ItemStack item) {
         self.getEquipment().setLeggings(item);
     }
 
@@ -103,6 +111,10 @@ public class LivingEntityExt {
         setLegs(self, new ItemStack(item));
     }
 
+    public static void setPants(LivingEntity self, Material item) {
+        setLegs(self, new ItemStack(item));
+    }
+
     public static void setHand(LivingEntity self, Material item) {
         setHand(self, new ItemStack(item));
     }
@@ -120,6 +132,10 @@ public class LivingEntityExt {
     }
 
     public static void setLegs(LivingEntity self, int item) {
+        setLegs(self, new ItemStack(item));
+    }
+
+    public static void setPants(LivingEntity self, int item) {
         setLegs(self, new ItemStack(item));
     }
 

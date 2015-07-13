@@ -22,3 +22,4 @@ import:
 - class: org.bukkit.util.BlockVector
 - class: org.bukkit.event.EventPriority
 - class: org.bukkit.util.EulerAngle
+- class: org.bukkit.material.MaterialData

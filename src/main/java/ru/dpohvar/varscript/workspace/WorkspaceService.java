@@ -87,8 +87,8 @@ public class WorkspaceService extends GroovyObjectSupport {
                 String mask = maskFlag instanceof String ? (String) maskFlag : null;
                 for (String cName : BootHelper.getClassNamesFromPackage(aScanPackage, recursive)) {
                     if (mask != null && !cName.matches(mask)) continue;
-                    importCustomizer.addImport( getClassShortName(cName), cName);
                     try {
+                        importCustomizer.addImport( getClassShortName(cName), cName);
                         importTabCompleteClasses.put(getClassShortName(cName), libLoader.loadClass(cName));
                     } catch (ClassNotFoundException ignored) {}
                 }
@@ -98,8 +98,8 @@ public class WorkspaceService extends GroovyObjectSupport {
             if (aClass != null) {
                 Object aliasFlag = anImport.get("as");
                 String alias = aliasFlag != null ? aliasFlag.toString() : getClassShortName(aClass);
-                importCustomizer.addImport(alias, aClass);
                 try {
+                    importCustomizer.addImport(alias, aClass);
                     importTabCompleteClasses.put(alias, libLoader.loadClass(aClass));
                 } catch (ClassNotFoundException ignored) {}
             }

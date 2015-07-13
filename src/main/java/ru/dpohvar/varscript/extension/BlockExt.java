@@ -6,6 +6,8 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import ru.dpohvar.varscript.extension.region.BoxArea;
@@ -13,6 +15,7 @@ import ru.dpohvar.varscript.extension.region.BoxRegion;
 import ru.dpohvar.varscript.extension.region.SphereArea;
 import ru.dpohvar.varscript.extension.region.SphereRegion;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -32,14 +35,6 @@ public class BlockExt {
         return getLoc(self).getBlock();
     }
 
-    public static double getX(Block self){
-        return getLoc(self).getX();
-    }
-
-    public static double getY(Block self){
-        return getLoc(self).getY();
-    }
-
     public static float getPitch(Block self){
         return getLoc(self).getPitch();
     }
@@ -52,20 +47,16 @@ public class BlockExt {
         return getLoc(self).getChunk();
     }
 
-    public static double getZ(Block self){
-        return getLoc(self).getZ();
-    }
-
     public static int getBx(Block self){
-        return getLoc(self).getBlockX();
+        return self.getX();
     }
 
     public static int getBy(Block self){
-        return getLoc(self).getBlockY();
+        return self.getY();
     }
 
     public static int getBz(Block self){
-        return getLoc(self).getBlockZ();
+        return self.getZ();
     }
 
     public static List<Entity> near(Block self, double radius){
@@ -77,6 +68,11 @@ public class BlockExt {
             if (entity.getLocation().distance(loc) > radius) iterator.remove();
         }
         return entities;
+    }
+
+    public static List<ItemStack> getItems(Block self){
+        Inventory inv = ((InventoryHolder) self.getState()).getInventory();
+        return Arrays.asList(inv.getContents());
     }
 
     // setters
@@ -111,6 +107,14 @@ public class BlockExt {
 
     public static void block(Block self, int id, int data){
         bl(self, id, data);
+    }
+
+    public static void setItems(Block self, List<ItemStack> items){
+        Inventory inv = ((InventoryHolder) self.getState()).getInventory();
+        ItemStack[] conArray = new ItemStack[inv.getSize()];
+        int i = 0;
+        for (ItemStack itemStack : items) conArray[i++] = itemStack;
+        inv.setContents(conArray);
     }
 
     // region

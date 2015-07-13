@@ -1,6 +1,9 @@
 package ru.dpohvar.varscript.workspace;
 
 import groovy.lang.*;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FirstParam;
+import groovy.transform.stc.SimpleType;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
@@ -140,16 +143,16 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         return new BukkitEventTrigger<T>(this, triggers, eventClass, priority, ignoreCancelled);
     }
 
-    public <T extends Event> BukkitEventTrigger<T> listen(Class<T> eventClass, Closure handler){
+    public <T extends Event> BukkitEventTrigger<T> listen(Class<T> eventClass, @ClosureParams(FirstParam.FirstGenericType.class) Closure handler){
         return listen(eventClass, EventPriority.NORMAL, false, handler);
     }
 
-    public <T extends Event> BukkitEventTrigger<T> listen(Class<T> eventClass, EventPriority priority, Closure handler){
+    public <T extends Event> BukkitEventTrigger<T> listen(Class<T> eventClass, EventPriority priority, @ClosureParams(FirstParam.FirstGenericType.class) Closure handler){
         return listen(eventClass, priority, false, handler);
     }
 
-    public <T extends Event> BukkitEventTrigger<T> listen(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, Closure handler){
-        Class[] types = handler.getParameterTypes();
+    public <T extends Event> BukkitEventTrigger<T> listen(Class<T> eventClass, EventPriority priority, boolean ignoreCancelled, @ClosureParams(FirstParam.FirstGenericType.class) Closure handler){
+        Class<?>[] types = handler.getParameterTypes();
         if (types.length > 1) throw new IllegalArgumentException("wrong number of closure params: "+types.length);
         if (types.length == 1 && !types[0].isAssignableFrom(eventClass)) {
             throw new IllegalArgumentException("wrong type of closure param: "+types[0]+", expected: "+eventClass);
@@ -159,21 +162,22 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
 
 
     @Override
-    public BukkitEventTrigger listen(Closure closure){
+    public BukkitEventTrigger listen( Closure closure){
         return listen(EventPriority.NORMAL, closure);
     }
 
     @Override
     public BukkitEventTrigger listen(EventPriority priority, Closure closure){
         if (disabled || removed) throw new IllegalStateException("workspace is disabled");
-        Class[] types = closure.getParameterTypes();
+        Class<?>[] types = closure.getParameterTypes();
         if (types.length != 1) throw new IllegalArgumentException("wrong number of closure params: "+types.length);
         if (!Event.class.isAssignableFrom(types[0])) {
             throw new IllegalArgumentException(
                     "wrong type of closure param: "+types[0].getName()+", expected: "+Event.class.getName()
             );
         }
-        BukkitEventTrigger trigger = new BukkitEventTrigger(this, triggers, types[0], priority, false);
+        Class<? extends Event> eventClass = types[0].asSubclass(Event.class);
+        BukkitEventTrigger trigger = new BukkitEventTrigger<Event>(this, triggers, eventClass, priority, false);
         trigger.setHandler(closure);
         return trigger;
     }
@@ -216,8 +220,8 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     }
 
     @Override
-    public BukkitIntervalTrigger interval(long interval, long timeout, boolean sync, Closure handler){
-        Class[] types = handler.getParameterTypes();
+    public BukkitIntervalTrigger interval(long interval, long timeout, boolean sync, @ClosureParams(value=SimpleType.class,options={"int","ru.dpohvar.varscript.trigger.BukkitIntervalTrigger"}) Closure handler){
+        Class<?>[] types = handler.getParameterTypes();
         if (types.length > 2) throw new IllegalArgumentException("wrong number of closure params: "+types.length);
         if (types.length > 0) {
             if (!types[0].isAssignableFrom(Integer.class) && types[0] != int.class) {
@@ -233,12 +237,12 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     }
 
     @Override
-    public BukkitIntervalTrigger interval(long interval, long timeout, Closure handler){
+    public BukkitIntervalTrigger interval(long interval, long timeout, @ClosureParams(value=SimpleType.class,options={"int","ru.dpohvar.varscript.trigger.BukkitIntervalTrigger"}) Closure handler){
         return interval(interval, timeout, true, handler);
     }
 
     @Override
-    public BukkitIntervalTrigger interval(long interval, Closure handler){
+    public BukkitIntervalTrigger interval(long interval, @ClosureParams(value=SimpleType.class,options={"int","ru.dpohvar.varscript.trigger.BukkitIntervalTrigger"}) Closure handler){
         return interval(interval, interval, true, handler);
     }
 
@@ -263,11 +267,11 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     }
 
     @Override
-    public CommandTrigger command(String name, String description, String usage, List<String> aliases, Closure handler){
-        Class[] types = handler.getParameterTypes();
-        List<Class<?>> inject = Arrays.asList(CommandSender.class, List.class, String.class);
+    public CommandTrigger command(String name, String description, String usage, List<String> aliases, @ClosureParams(value=SimpleType.class,options={"org.bukkit.command.CommandSender","List<String>","String"})Closure handler){
+        Class<?>[] types = handler.getParameterTypes();
+        List<Class<?>> inject = Arrays.<Class<?>>asList(CommandSender.class, List.class, String.class);
         List<Integer> argOrder = new ArrayList<Integer>();
-        scanClasses: for (Class type : types) {
+        scanClasses: for (Class<?> type : types) {
             for (int i=0; i<inject.size(); i++){
                 if (argOrder.contains(i)) continue;
                 Class<?> injectClass = inject.get(i);
@@ -289,7 +293,7 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         List paramAliases = (List) tryGetAttribute(params, "aliases");
         Closure handler = (Closure) tryGetAttribute(params, "handler");
         List<String> aliases = new ArrayList<String>();
-        for (Object alias : paramAliases) aliases.add(DefaultGroovyMethods.toString(alias));
+        if (paramAliases != null) for (Object alias : paramAliases) aliases.add(DefaultGroovyMethods.toString(alias));
         if (handler == null) return command(name, description, usage, aliases);
         else return command(name, description, usage, aliases, handler);
     }

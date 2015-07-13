@@ -28,7 +28,7 @@ public class VectorExt {
     }
 
     public static Vector div(Vector self, int val) {
-        return self.clone().multiply(1/val);
+        return self.clone().multiply(1.0/val);
     }
 
     public static Vector multiply(Vector self, Vector val) {
