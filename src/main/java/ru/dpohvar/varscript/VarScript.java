@@ -26,11 +26,11 @@ public class VarScript extends JavaPlugin {
     public static final File dataFolder;
     public static final VarScriptClassLoader libLoader;
     public static final Ivy ivy;
-    public static final String prefix = translateAlternateColorCodes('&',"&2&l[&a%s>&2&l]&r ");
 
-    public static final String printPrefix = translateAlternateColorCodes('&',"&6&l[&e%s>&6&l]&r ");
-    public static final String errorPrefix = translateAlternateColorCodes('&',"&4&l[&c%s>&4&l]&r ");
-    public static final String promptLinePrefix = translateAlternateColorCodes('&',"&8&l[&7%02d>&8&l]&r ");
+    public static final String prefix = translateAlternateColorCodes('&',"&2&l[&a%s&2&l]>&r ");
+    public static final String printPrefix = translateAlternateColorCodes('&',"&6&l[&e%s&6&l]>&r ");
+    public static final String errorPrefix = translateAlternateColorCodes('&',"&4&l[&c%s&4&l]>&r ");
+    public static final String promptLinePrefix = translateAlternateColorCodes('&',"&8&l[&7:%02d&8&l]>&r ");
     static {
         pluginName = "VarScript";
         pluginsFolder = new File("plugins");

@@ -132,20 +132,49 @@ public abstract class CallerScript extends Script implements ScriptProperties {
         printCache = new StringBuilder();
     }
 
-    public Object runScript(String name, Object... args) throws Exception {
+    private File getScriptFile(String name){
         File scriptsDirectory = workspace.getWorkspaceService().getScriptsDirectory();
-        File scriptFile = new File(scriptsDirectory, name + ".groovy");
-        return runFileScript(scriptFile, args);
+        return new File(scriptsDirectory, name + ".groovy");
     }
 
-    public Object runFileScript(File file, Object... args) throws Exception {
+    public Object runScriptFile(String name, Object... args) throws Exception {
+        return runScriptFile(getScriptFile(name), args);
+    }
+
+    public Object runScriptFile(String name, List args) throws Exception {
+        return runScriptFile(getScriptFile(name), args);
+    }
+
+    public Object runScriptFile(String name, Binding binding) throws Exception {
+        return runScriptFile(getScriptFile(name), binding);
+    }
+
+    public Object runScriptFile(String name, Map variables) throws Exception {
+        return runScriptFile(getScriptFile(name), variables);
+    }
+
+    public Object runScriptFile(File file, Binding binding) throws Exception {
         if (file.isFile()) {
-            Binding binding = new Binding();
-            binding.setVariable("args", Arrays.asList(args));
             return workspace.executeScript(caller, file, binding);
         } else {
             throw new FileNotFoundException(file.toString());
         }
+    }
+
+    public Object runScriptFile(File file, Map variables) throws Exception {
+        return runScriptFile(file, new Binding(variables));
+    }
+
+    public Object runScriptFile(File file, Object... args) throws Exception {
+        Binding binding = new Binding();
+        binding.setVariable("args", DefaultGroovyMethods.asType(args, List.class));
+        return runScriptFile(file, binding);
+    }
+
+    public Object runScriptFile(File file, List args) throws Exception {
+        Binding binding = new Binding();
+        binding.setVariable("args", new ArrayList(args));
+        return runScriptFile(file, binding);
     }
 
     @Override

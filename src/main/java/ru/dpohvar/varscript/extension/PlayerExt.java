@@ -35,4 +35,12 @@ public class PlayerExt {
         return self;
     }
 
+    public static int getFood(Player self){
+        return self.getFoodLevel();
+    }
+
+    public static void setFood(Player self, int value){
+        self.setFoodLevel(value);
+    }
+
 }

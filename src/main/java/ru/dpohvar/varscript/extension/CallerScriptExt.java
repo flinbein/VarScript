@@ -7,6 +7,8 @@ import org.bukkit.inventory.ItemStack;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import ru.dpohvar.varscript.workspace.CallerScript;
 
+import java.io.*;
+
 public class CallerScriptExt {
 
     public static Damageable kill(CallerScript self, Damageable damageable) {
@@ -106,6 +108,32 @@ public class CallerScriptExt {
             }
         }
         throw new IllegalArgumentException("no entity with id "+id);
+    }
+
+    public static String toJSON (CallerScript self, Object src){
+        return org.json.simple.JSONValue.toJSONString(src);
+    }
+
+    public static Object parseJSON (CallerScript self, CharSequence src){
+        return org.json.simple.JSONValue.parse(src.toString());
+    }
+
+    public static Object parseJSON (CallerScript self, File file) throws FileNotFoundException{
+        InputStream stream = null;
+        try {
+            stream = new FileInputStream(file);
+            Reader reader = new InputStreamReader(stream,"UTF8");
+            return org.json.simple.JSONValue.parse(reader);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (stream != null) try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }
