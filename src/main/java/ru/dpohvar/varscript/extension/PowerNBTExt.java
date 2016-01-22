@@ -2,9 +2,7 @@ package ru.dpohvar.varscript.extension;
 
 import groovy.lang.Closure;
 import me.dpohvar.powernbt.PowerNBT;
-import me.dpohvar.powernbt.api.NBTCompound;
-import me.dpohvar.powernbt.api.NBTList;
-import me.dpohvar.powernbt.api.NBTManager;
+import me.dpohvar.powernbt.api.*;
 import me.dpohvar.powernbt.nbt.NBTBase;
 import me.dpohvar.powernbt.utils.NBTUtils;
 import org.bukkit.*;
@@ -86,13 +84,13 @@ public class PowerNBTExt {
         nbt(self, data);
     }
 
-    public static Object nbt(Block self, Closure closure){
-        NBTCompound tag = getNbt(self);
+    public static Object nbt(Block selfBlock, Closure closure){
+        NBTCompound tag = getNbt(selfBlock);
         NBTCompound ext = tag != null ? tag.clone() : new NBTCompound();
         closure.setDelegate(new NBTCompoundProperties(ext));
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        Object result = closure.call(self);
-        if (!ext.equals(tag)) setNbt(self, ext);
+        Object result = closure.call(selfBlock);
+        if (!ext.equals(tag)) setNbt(selfBlock, ext);
         return result;
     }
 
@@ -121,13 +119,13 @@ public class PowerNBTExt {
         nbt(self, data);
     }
 
-    public static Object nbt(ItemStack self, Closure closure){
-        NBTCompound tag = getNbt(self);
+    public static Object nbt(ItemStack selfItemStack, Closure closure){
+        NBTCompound tag = getNbt(selfItemStack);
         NBTCompound ext = tag != null ? tag.clone() : new NBTCompound();
         closure.setDelegate(new NBTCompoundProperties(ext));
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        Object result = closure.call(self);
-        if (!ext.equals(tag)) setNbt(self, ext);
+        Object result = closure.call(selfItemStack);
+        if (!ext.equals(tag)) setNbt(selfItemStack, ext);
         return result;
     }
 
@@ -156,13 +154,13 @@ public class PowerNBTExt {
         nbt(self, data);
     }
 
-    public static Object nbt(Chunk self, Closure closure){
-        NBTCompound tag = getNbt(self);
+    public static Object nbt(Chunk selfChunk, Closure closure){
+        NBTCompound tag = getNbt(selfChunk);
         NBTCompound ext = tag != null ? tag.clone() : new NBTCompound();
         closure.setDelegate(new NBTCompoundProperties(ext));
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
-        Object result = closure.call(self);
-        if (!ext.equals(tag)) setNbt(self, ext);
+        Object result = closure.call(selfChunk);
+        if (!ext.equals(tag)) setNbt(selfChunk, ext);
         return result;
     }
 

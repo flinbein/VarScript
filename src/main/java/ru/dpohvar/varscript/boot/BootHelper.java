@@ -11,6 +11,8 @@ import org.apache.ivy.core.report.ResolveReport;
 import org.apache.ivy.core.resolve.ResolveOptions;
 import org.apache.ivy.core.settings.IvySettings;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.util.NumberConversions;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
@@ -57,18 +59,9 @@ public class BootHelper {
         try {
             libLoader.loadClass("org.apache.ivy.Ivy");
         } catch (ClassNotFoundException ignored) {
-            File configFile = new File(VarScript.dataFolder, "config.yml");
-            Map config;
-            if (configFile.isFile()) config = readYaml(configFile);
-            else config = readYaml(resourceClassLoader.getResource("config.yml"));
-            Map ivySettings = (Map) config.get("ivy");
-            if (ivySettings == null) {
-                config = readYaml(resourceClassLoader.getResource("config.yml"));
-                ivySettings = (Map) config.get("ivy");
-            }
-            File ivyJarFile = new File((String) ivySettings.get("jar"));
+            File ivyJarFile = new File(getConfigString("ivy.jar", null));
             if (!ivyJarFile.isFile()){
-                String ivyDownloadURL = (String) ivySettings.get("download-url");
+                String ivyDownloadURL = getConfigString("ivy.download-url", null);
                 downloadIvyJar(ivyDownloadURL, ivyJarFile);
             }
             libLoader.addLibFile(ivyJarFile, VarScriptClassLoader.TO_PARENT);
@@ -90,12 +83,76 @@ public class BootHelper {
         return ivy;
     }
 
+
+    private static YamlConfiguration localConfig; // on inner local config resource
+    private static YamlConfiguration fileConfig; // on config file
+
+    private static void checkConfig(){
+        if (localConfig == null) {
+            // try to read local config resource
+            InputStream resourceStream = null;
+            try {
+                resourceStream = VarScript.class.getClassLoader().getResourceAsStream("config.yml");
+                localConfig = new YamlConfiguration();
+                localConfig.load(new InputStreamReader(resourceStream,"UTF8"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                if (resourceStream != null) try {
+                    resourceStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        if (fileConfig == null) try {
+            // try to read config file
+            fileConfig = new YamlConfiguration();
+            File file = new File(VarScript.dataFolder, "config.yml");
+            if (file.isFile()) fileConfig.load(file);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String getConfigString(String path, String defValue){
+        checkConfig();
+        String value = fileConfig.getString(path);
+        return value != null ? value : localConfig.getString(path, defValue);
+    }
+
+    private static int getConfigInt(String path, int defValue){
+        checkConfig();
+        Object value = fileConfig.get(path);
+        return value != null ? NumberConversions.toInt(value) : localConfig.getInt(path, defValue);
+    }
+
+    public static void prepareSystemVariables(){
+        System.setProperty("ivy.message.logger.level",getConfigString("ivy.log-level","4"));
+        String confHome = getConfigString("system.user.home",null);
+        if (confHome != null) {
+            System.setProperty("user.home",confHome);
+        } else if (System.getProperty("user.home").equals("?")){
+            System.setProperty("user.home",new File("").getAbsolutePath());
+        }
+    }
+
     /**
      * Configure Groovy Grape engine to use local ivy instance
      */
     public static void configureGrape(){
         GrapeIvy grape = (GrapeIvy) Grape.getInstance();
+        IvySettings settings = new IvySettings();
+        ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
+        File ivySettingsXmlFile = new File(VarScript.dataFolder, "ivysettings.xml");
+        try {
+            if (ivySettingsXmlFile.isFile()) settings.load(ivySettingsXmlFile);
+            else settings.load(resourceClassLoader.getResource("ivysettings.xml"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         grape.setIvyInstance(ivy);
+        grape.setSettings(settings);
     }
 
     /**
@@ -118,10 +175,10 @@ public class BootHelper {
         ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
         VarScriptClassLoader libLoader = VarScript.libLoader;
         File configFile = new File(VarScript.dataFolder, "config.yml");
-        Map config;
+        Map config = null;
         if (configFile.isFile()) config = readYaml(configFile);
-        else config = readYaml(VarScript.class.getClassLoader().getResource("config.yml"));
-        Object librariesValue = config.get("libraries");
+        Object librariesValue = null;
+        if (config != null) librariesValue = config.get("libraries");
         if (librariesValue == null) {
             config = readYaml(resourceClassLoader.getResource("config.yml"));
             librariesValue = config.get("libraries");
@@ -142,7 +199,7 @@ public class BootHelper {
 
     public static void loadExtensions(ClassLoader classLoader){
         Map<CachedClass, List<MetaMethod>> map = new HashMap<CachedClass, List<MetaMethod>>();
-        Enumeration<URL> resources = null;
+        Enumeration<URL> resources;
         try {
             resources = classLoader.getResources(ExtensionModuleScanner.MODULE_META_INF_FILE);
         } catch (IOException e) {

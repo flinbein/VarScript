@@ -36,6 +36,7 @@ public class VarScript extends JavaPlugin {
         pluginsFolder = new File("plugins");
         dataFolder = new File(pluginsFolder, pluginName);
         libLoader = new VarScriptClassLoader((URLClassLoader)VarScript.class.getClassLoader());
+        BootHelper.prepareSystemVariables();
         BootHelper.loadLibraries();
         ivy = BootHelper.prepareIvy();
         BootHelper.loadSelfDependencies();
@@ -46,6 +47,11 @@ public class VarScript extends JavaPlugin {
 
     public boolean isDebug(){
         return getConfig().getBoolean("debug",false);
+    }
+
+    public void setDebug(boolean value){
+        getConfig().set("debug",value);
+        saveConfig();
     }
 
 

@@ -6,6 +6,7 @@ import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -52,7 +53,10 @@ public class WorkspaceService extends GroovyObjectSupport {
     private VarScript varscript;
 
     private final File autorunDirectory;
+    private final File serviceDirectory;
     private final File scriptsDirectory;
+    private final File classesDirectory;
+    private final GroovyClassLoader groovyClassLoader;
     private final Map<String,Workspace> workspaceMap = new HashMap<String, Workspace>();
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
     private final List<String> classPath = new LinkedList<String>();
@@ -70,13 +74,12 @@ public class WorkspaceService extends GroovyObjectSupport {
         VarScriptClassLoader libLoader = VarScript.libLoader;
         this.varscript = varscript;
         FileConfiguration config = varscript.getConfig();
-        this.autorunDirectory = new File(config.getString("autorun"));
-        this.scriptsDirectory = new File(config.getString("scripts"));
+        this.autorunDirectory = new File(config.getString("sources.autorun"));
+        this.scriptsDirectory = new File(config.getString("sources.scripts"));
+        this.classesDirectory = new File(config.getString("sources.classes"));
+        this.serviceDirectory = new File(config.getString("services.directory"));
         ImportCustomizer importCustomizer = new ImportCustomizer();
         compilationCustomizers.add(importCustomizer);
-        importCustomizer.addImport("Vector", "org.bukkit.util.Vector");
-        importCustomizer.addImport("BlockVector", "org.bukkit.util.BlockVector");
-        importCustomizer.addImport("EventPriority", "org.bukkit.event.EventPriority");
         for (Map<?, ?> anImport : config.getMapList("import")) {
             Object scanPackageValue = anImport.get("scan-package");
             String aScanPackage = scanPackageValue != null ? scanPackageValue.toString() : null;
@@ -99,15 +102,28 @@ public class WorkspaceService extends GroovyObjectSupport {
                 Object aliasFlag = anImport.get("as");
                 String alias = aliasFlag != null ? aliasFlag.toString() : getClassShortName(aClass);
                 try {
+                    Class clazz = libLoader.loadClass(aClass);
+                    importTabCompleteClasses.put(alias, clazz);
                     importCustomizer.addImport(alias, aClass);
-                    importTabCompleteClasses.put(alias, libLoader.loadClass(aClass));
                 } catch (ClassNotFoundException ignored) {}
             }
             Object packageValue = anImport.get("package");
             String aPackage = packageValue != null ? packageValue.toString() : null;
             if (aPackage != null) importCustomizer.addStarImports(aPackage);
         }
-        classPath.add(scriptsDirectory.toString());
+        classPath.add(classesDirectory.toString());
+
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
+        compilerConfiguration.setScriptBaseClass(CallerScript.class.getName());
+        compilerConfiguration.getCompilationCustomizers().addAll(compilationCustomizers);
+        compilerConfiguration.getClasspath().addAll(classPath);
+        String encoding = varscript.getConfig().getString("sources.encoding");
+        if (encoding != null) compilerConfiguration.setSourceEncoding(encoding);
+        groovyClassLoader = new GroovyClassLoader(VarScript.libLoader, compilerConfiguration);
+    }
+
+    public GroovyClassLoader getGroovyClassLoader() {
+        return groovyClassLoader;
     }
 
     public List<GroovyObject> getDynamicModifiers() {
@@ -131,6 +147,14 @@ public class WorkspaceService extends GroovyObjectSupport {
         return scriptsDirectory;
     }
 
+    public File getClassesDirectory() {
+        return classesDirectory;
+    }
+
+    public File getServiceDirectory() {
+        return serviceDirectory;
+    }
+
     public Binding getBinding() {
         return binding;
     }
@@ -142,6 +166,7 @@ public class WorkspaceService extends GroovyObjectSupport {
     public List<CompilationCustomizer> getCompilationCustomizers() {
         return compilationCustomizers;
     }
+
 
     public List<String> getClassPath() {
         return classPath;

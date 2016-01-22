@@ -41,8 +41,10 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         compilerConfiguration.setScriptBaseClass(CallerScript.class.getName());
         List<CompilationCustomizer> compilationCustomizers = compilerConfiguration.getCompilationCustomizers();
         compilerConfiguration.getClasspath().addAll(workspaceService.getClassPath());
+        String encoding = workspaceService.getVarScript().getConfig().getString("sources.encoding");
+        if (encoding != null) compilerConfiguration.setSourceEncoding(encoding);
         compilationCustomizers.addAll(workspaceService.getCompilationCustomizers());
-        groovyClassLoader = new GroovyClassLoader(VarScript.libLoader, compilerConfiguration);
+        groovyClassLoader = new GroovyClassLoader(workspaceService.getGroovyClassLoader(), compilerConfiguration);
     }
 
     public WorkspaceService getWorkspaceService() {

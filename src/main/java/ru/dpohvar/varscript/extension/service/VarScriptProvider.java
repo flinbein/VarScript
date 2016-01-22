@@ -1,6 +1,5 @@
 package ru.dpohvar.varscript.extension.service;
 
-import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingMethodException;
 import org.bukkit.Location;
@@ -14,9 +13,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.extension.completer.EntityIdCompleter;
@@ -24,6 +21,7 @@ import ru.dpohvar.varscript.service.VarScriptHook;
 import ru.dpohvar.varscript.utils.PropertySelector;
 import ru.dpohvar.varscript.utils.ScriptProperties;
 import ru.dpohvar.varscript.workspace.CallerScript;
+import ru.dpohvar.varscript.workspace.Workspace;
 import ru.dpohvar.varscript.workspace.WorkspaceService;
 
 import java.io.File;
@@ -42,10 +40,6 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         server = plugin.getServer();
         plugin.getCommandCompleter().getDelegateCompleters().add(new EntityIdCompleter());
         CallerScript.getDynamicModifiers().add(this);
-        //// this customizers is overrided by classloader
-        //ImportVersionASTTransformation astTransformation = new ImportVersionASTTransformation();
-        //CompilationCustomizer nmsCustomizer = new SourceASTTransformationCustomizer(astTransformation);
-        //service.getCompilationCustomizers().add(nmsCustomizer);
     }
 
     @Override
@@ -54,6 +48,9 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
 
     public Map<String,Class> getPropertyMapFor(ScriptProperties script){
         Map<String,Class> result = new HashMap<String, Class>();
+        for (Workspace ws: script.getGlobal().getWorkspaces()) {
+            result.put(ws.getName(), Workspace.class);
+        }
         for (World world : server.getWorlds()) {
             result.put(world.getName(), world.getClass());
         }
@@ -63,13 +60,7 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         for (Player player : server.getOnlinePlayers()) {
             result.put(player.getName(), player.getClass());
         }
-        File[] files = scriptDirectory.listFiles();
-        if (files != null) for (File file : files) {
-            String name = file.getName();
-            if (!name.endsWith(".groovy")) continue;
-            if (name.length() <= 7) continue;
-            result.put(name.substring(0, name.length()-7), null);
-        }
+        addGroovyFilesToMap(scriptDirectory.listFiles(),result);
         for (Method method : this.getClass().getMethods()) {
             Class<?>[] types = method.getParameterTypes();
             if (types.length == 1 && types[0].equals(ScriptProperties.class)) {
@@ -81,14 +72,17 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
 
     public Map<String,Class> getMethodMapFor(ScriptProperties script){
         Map<String,Class> result = new HashMap<String, Class>();
-        File[] files = scriptDirectory.listFiles();
+        addGroovyFilesToMap(scriptDirectory.listFiles(),result);
+        return result;
+    }
+
+    private void addGroovyFilesToMap(File[] files, Map<String,Class> result){
         if (files != null) for (File file : files) {
             String name = file.getName();
             if (!name.endsWith(".groovy")) continue;
             if (name.length() <= 7) continue;
             result.put(name.substring(0, name.length()-7), null);
         }
-        return result;
     }
 
     public Object getPropertyFor(ScriptProperties script, String property) throws Exception {
@@ -108,6 +102,8 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         if (plugin != null) return plugin;
         World world = server.getWorld(property);
         if (world != null) return world;
+        Workspace ws = script.getGlobal().getWorkspace(property);
+        if (ws != null) return ws;
         throw PropertySelector.next;
     }
 

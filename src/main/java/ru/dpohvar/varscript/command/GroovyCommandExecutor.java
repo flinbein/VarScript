@@ -27,7 +27,7 @@ public class GroovyCommandExecutor implements CommandExecutor{
     private final Parser parser = new Parser();
     private final ConversationFactory factory;
 
-    public GroovyCommandExecutor( VarScript plugin){
+    public GroovyCommandExecutor(VarScript plugin){
         this.plugin = plugin;
         factory = new ConversationFactory(plugin)
                 .withFirstPrompt(new GroovyLinePrompt(parser))

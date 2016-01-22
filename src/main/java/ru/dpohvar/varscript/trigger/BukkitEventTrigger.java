@@ -7,7 +7,6 @@ import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.TimedRegisteredListener;
-import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
@@ -21,7 +20,7 @@ public class BukkitEventTrigger<T extends Event> implements Trigger, Listener, E
     private Closure handler;
     private boolean useBinding;
     private final Workspace workspace;
-    private final Class eventClass;
+    private final Class<?> eventClass;
     private final Set<Trigger> parentTriggers;
     private final HandlerList handlerList;
     private final RegisteredListener registeredListener;
@@ -65,7 +64,7 @@ public class BukkitEventTrigger<T extends Event> implements Trigger, Listener, E
     }
 
     public void setHandler(Closure handler) {
-        Class[] types = handler.getParameterTypes();
+        Class<?>[] types = handler.getParameterTypes();
         if (types.length > 1) throw new IllegalArgumentException("wrong number of closure params: "+types.length);
         if (types.length == 1 && !types[0].isAssignableFrom(eventClass)) {
             throw new IllegalArgumentException("wrong type of closure param: "+types[0]+", expected: "+eventClass);

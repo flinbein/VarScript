@@ -191,6 +191,7 @@ public class GroovyCommandCompleter implements TabCompleter {
         );
         boolean classHook = tokens.size() <= 1 && service.getImportTabCompleteClasses().containsKey(firstToken);
 
+        if (metaClass == null) return null;
         metaClass = skipTokens(tokens, metaClass);
         if (metaClass == null) return null;
 

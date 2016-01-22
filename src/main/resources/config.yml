@@ -1,11 +1,16 @@
 ivy:
+  log-level: 2
   download-url: http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy-version}/ivy-${ivy-version}.jar
   jar: plugins/${project.artifactId}/ivy/ivy-${ivy-version}.jar
   cache: plugins/${project.artifactId}/ivy
 libraries: plugins/${project.artifactId}/lib
-classpath: plugins/${project.artifactId}/scripts
-scripts: plugins/${project.artifactId}/scripts
-autorun: plugins/${project.artifactId}/autorun
+sources:
+  autorun: plugins/${project.artifactId}/autorun
+  scripts: plugins/${project.artifactId}/scripts
+  classes: plugins/${project.artifactId}/scripts
+  encoding: UTF-8
+services:
+  directory: plugins/${project.artifactId}/services
 import:
 - scan-package: org.bukkit
 - scan-package: org.bukkit.block
