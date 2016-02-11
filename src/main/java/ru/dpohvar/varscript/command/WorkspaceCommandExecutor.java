@@ -4,26 +4,52 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.PullResult;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.merge.MergeStrategy;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.URIish;
 import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
+import ru.dpohvar.varscript.command.git.*;
 import ru.dpohvar.varscript.workspace.Workspace;
 import ru.dpohvar.varscript.workspace.WorkspaceService;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
+import java.text.DateFormat;
+import java.util.*;
 
 public class WorkspaceCommandExecutor implements CommandExecutor{
 
+    private static final String gitUsage = ChatColor.translateAlternateColorCodes('&',"Git usage:" +
+            "\n&e/ws git clone &6<url> &7[&6<name>&7]&r" +
+            "\n&e/ws git branch &7[&eremote&7|&eall&7]&r" +
+            "\n&e/ws git log &7[&6<ref>&7]&r" +
+            "\n&e/ws git checkout &6<branch>&7|&6<commit>&r" +
+            "\n&e/ws git fetch &6<remote>&r" +
+            "\n&e/ws git delete &7[&6<name>&7]&r"
+    );
+    private static final String wsUsage = ChatColor.translateAlternateColorCodes('&',"Workspace usage:" +
+            "\n&e/ws" +
+            "\n&e/ws list &7[&6<pattern>&7]&r" +
+            "\n&e/ws set &6<name>&r" +
+            "\n&e/ws create &7[&6<name>&7]&r" +
+            "\n&e/ws reload &7[&6<name>&7]&r" +
+            "\n&e/ws stop &7[&6<name>&7]&r" +
+            "\n&e/ws clear &7[&6<name>&7]&r" +
+            "\n&e/ws delete &7[&6<name>&7]&r" +
+            "\n&e/ws autorun &7[&eon&7|&eoff&7 [&6<name>&7]]&r" +
+            "\n&e/ws git help&r"
+    );
     private final VarScript plugin;
 
     public WorkspaceCommandExecutor(VarScript plugin) {
@@ -35,166 +61,256 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         Caller caller = plugin.getCallerService().getCaller(sender);
         if (strings.length == 0) return onCommandEmpty(caller);
 
-        if (strings.length == 1 && strings[0].equals("list")) return onCommandList(caller);
-        if (strings.length == 1 && strings[0].equals("remove")) return onCommandRemove(caller, null);
+        if (strings.length == 1 && strings[0].equals("list")) return onCommandList(caller, null);
+        if (strings.length == 1 && strings[0].equals("clear")) return onCommandClear(caller, null);
+        if (strings.length == 1 && strings[0].equals("delete")) return onCommandDelete(caller, null);
         if (strings.length == 1 && strings[0].equals("reload")) return onCommandReload(caller, null);
         if (strings.length == 1 && strings[0].equals("create")) return onCommandCreate(caller, null);
         if (strings.length == 1 && strings[0].equals("stop")) return onCommandStop(caller, null);
-        if (strings.length == 1 && strings[0].equals("service")) return onCommandServiceList(caller, null);
+        if (strings.length == 1 && strings[0].equals("autorun")) return onCommandAutorun(caller, null, null);
 
+        if (strings.length == 2 && strings[0].equals("list")) return onCommandList(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("set")) return onCommandSet(caller, strings[1]);
-        if (strings.length == 2 && strings[0].equals("remove")) return onCommandRemove(caller, strings[1]);
+        if (strings.length == 2 && strings[0].equals("clear")) return onCommandClear(caller, strings[1]);
+        if (strings.length == 2 && strings[0].equals("delete")) return onCommandDelete(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("reload")) return onCommandReload(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("create")) return onCommandCreate(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("stop")) return onCommandStop(caller, strings[1]);
+        if (strings.length == 2 && strings[0].equals("autorun")) return onCommandAutorun(caller, strings[1], null);
+        if (strings.length == 3 && strings[0].equals("autorun")) return onCommandAutorun(caller, strings[1], strings[2]);
 
+        if (strings.length >= 1 && strings[0].equals("git")) {
 
-        if (strings.length >= 2 && strings[0].equals("git")) {
             if (strings.length == 3 && strings[1].equals("clone")) return onCommandGitClone(caller, strings[2], null);
             if (strings.length == 4 && strings[1].equals("clone")) return onCommandGitClone(caller, strings[2], strings[3]);
 
             WorkspaceService service = plugin.getWorkspaceService();
-            String serviceName = service.getWorkspaceName(caller.getSender());
-            File gitDir = new File(service.getServiceDirectory(),serviceName+"/.git");
+            String workspaceName = service.getWorkspaceName(caller.getSender());
+
+            if (strings.length == 1 || strings.length == 2 && strings[1].equals("help")){
+                sender.sendMessage(gitUsage);
+                return true;
+            }
+
+            File gitDir = new File(service.getServiceDirectory(),workspaceName+"/.git");
             if (!gitDir.isDirectory()) {
-                caller.sendErrorMessage("No git here",serviceName);
+                caller.sendErrorMessage("No git here",workspaceName);
                 return true;
             }
             Git git;
             try {
                 git = new Git(new FileRepository(gitDir));
             } catch (IOException e) {
-                caller.sendErrorMessage(e.getMessage(),serviceName);
+                caller.sendErrorMessage(e.getMessage(),workspaceName);
                 return true;
             }
 
-            if (strings.length == 3 && strings[1].equals("checkout")) return onCommandGitCheckout(caller, serviceName, git, strings[2], null);
-            if (strings.length == 4 && strings[1].equals("checkout")) return onCommandGitCheckout(caller, serviceName, git, strings[2], strings[3]);
+            if (strings.length == 3 && strings[1].equals("checkout")) return onCommandGitCheckout(caller, workspaceName, git, strings[2]);
 
-            if (strings.length == 2 && strings[1].equals("branch")) return onCommandGitBranch(caller, serviceName, git);
+            if (strings.length == 2 && strings[1].equals("branch")) return onCommandGitBranch(caller, workspaceName, git, null);
+            if (strings.length == 3 && strings[1].equals("branch")) return onCommandGitBranch(caller, workspaceName, git, strings[2]);
 
-            if (strings.length == 2 && strings[1].equals("pull")) return onCommandGitPull(caller, serviceName, git, null, null);
-            if (strings.length == 3 && strings[1].equals("pull")) return onCommandGitPull(caller, serviceName, git, strings[2], null);
-            if (strings.length == 4 && strings[1].equals("pull")) return onCommandGitPull(caller, serviceName, git, strings[2], strings[3]);
+            if (strings.length == 2 && strings[1].equals("fetch")) return onCommandGitFetch(caller, workspaceName, git, null);
+            if (strings.length == 3 && strings[1].equals("fetch")) return onCommandGitFetch(caller, workspaceName, git, strings[2]);
 
-            if (strings.length == 2 && strings[1].equals("fetch")) return onCommandGitFetch(caller, serviceName, git, null);
-            if (strings.length == 2 && strings[1].equals("fetch")) return onCommandGitFetch(caller, serviceName, git, null);
+            if (strings.length == 2 && strings[1].equals("delete")) return onCommandGitDelete(caller, null);
+            if (strings.length == 3 && strings[1].equals("delete")) return onCommandGitDelete(caller, strings[2]);
 
-       }
-        return false;
+            if (strings.length == 2 && strings[1].equals("log")) return onCommandGitLog(caller, workspaceName, git, null);
+            if (strings.length == 3 && strings[1].equals("log")) return onCommandGitLog(caller, workspaceName, git, strings[2]);
+
+            sender.sendMessage(gitUsage);
+            return true;
+        }
+
+        sender.sendMessage(wsUsage);
+        return true;
     }
 
-    private boolean onCommandGitRemote(Caller caller, String serviceName, Git git) {
+    private boolean onCommandGitLog(Caller caller, String workspaceName, Git git, String ref) {
         try {
-            Repository repository = git.getRepository();
-            String remoteName = repository.getRemoteName(repository.getBranch());
-            caller.sendMessage(remoteName, serviceName);
+            ObjectId objectId = null;
+            if (ref != null) {
+                objectId = git.getRepository().resolve(ref);
+                if (objectId == null) {
+                    caller.sendErrorMessage("unresolved ref: "+ChatColor.RED+ref,workspaceName);
+                    return true;
+                }
+            }
+            LogCommand log = git.log();
+            if (objectId != null) log = log.add(objectId);
+            else log = log.all();
+            Iterable<RevCommit> call = log.call();
+            DateFormat dateFormat = DateFormat.getInstance();
+            String message = "log"+(objectId==null?"":(" from "+ChatColor.AQUA+ref+ChatColor.RESET))+":";
+            caller.sendMessage(message,workspaceName);
+            for (RevCommit commit : call) {
+                PersonIdent authorId = commit.getAuthorIdent();
+                StringBuilder buf = new StringBuilder();
+                String dateStr = dateFormat.format(authorId.getWhen());
+                buf.append(ChatColor.AQUA).append(commit.getName().substring(0,7));
+                buf.append(' ').append(ChatColor.YELLOW).append(dateStr);
+                buf.append(' ').append(ChatColor.GREEN).append(authorId.getName());
+                buf.append(' ').append(ChatColor.RESET).append(commit.getShortMessage());
+                caller.getSender().sendMessage(buf.toString());
+            }
+
         } catch (Exception e) {
-            caller.sendErrorMessage(e.getMessage(),serviceName);
+            caller.sendThrowable(e,workspaceName);
             return true;
+        } finally {
+            git.close();
         }
         return true;
     }
 
-    private boolean onCommandGitPull(Caller caller, String serviceName, Git git, String remote, String branch) {
-        PullResult result;
-        try {
-            result = git.pull()
-                    .setRemote(remote)
-                    .setRemoteBranchName(branch)
-                    .call();
-        } catch (GitAPIException e) {
-            caller.sendErrorMessage(e.getMessage(),serviceName);
-            return true;
-        }
-        if (result.isSuccessful()) {
-            caller.sendMessage(result.getMergeResult().getMergeStatus().toString(), serviceName);
-        } else {
-            caller.sendErrorMessage(result.toString(), serviceName);
-        }
+    private boolean onCommandGitFetch(Caller caller, String workspaceName, Git git, String remote) {
+        GitExecutor<FetchResult> executor = new GitExecutor<FetchResult>(caller, workspaceName, new GitFetchHandler());
+        FetchCommand command = git.fetch()
+                .setRemote(remote)
+                .setProgressMonitor(executor)
+                .setCredentialsProvider(executor);
+        executor.setCommand(command);
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,executor);
         return true;
     }
 
-
-    private boolean onCommandGitFetch(Caller caller, String serviceName, Git git, String remote) {
-        FetchResult result;
-        try {
-            result = git.fetch()
-                    .setRemote(remote)
-                    .call();
-        } catch (GitAPIException e) {
-            caller.sendErrorMessage(e.getMessage(),serviceName);
-            return true;
-        }
-        caller.sendMessage(result.getMessages(), serviceName);
-        return true;
-    }
-
-    private boolean onCommandGitBranch(Caller caller, String serviceName, Git git){
+    private boolean onCommandGitBranch(Caller caller, String workspaceName, Git git, String mode){
         StringBuilder builder = new StringBuilder();
-        builder.append("branches:");
         try {
-            String currentBranch = git.getRepository().getFullBranch();
-            List<Ref> branches = git.branchList().call();
+            ListBranchCommand.ListMode listMode = null;
+            if (mode != null) {
+                if (mode.toLowerCase().equals("all")) listMode = ListBranchCommand.ListMode.ALL;
+                else if (mode.toLowerCase().equals("remote")) listMode = ListBranchCommand.ListMode.REMOTE;
+                else {
+                    caller.sendErrorMessage("Unknown list mode: "+mode,workspaceName);
+                    return true;
+                }
+            }
+            String fullBranch = git.getRepository().getFullBranch();
+            builder.append("current branch: ").append(ChatColor.AQUA).append(fullBranch).append(ChatColor.RESET);
+            builder.append("\nbranches:");
+            List<Ref> branches = git.branchList().setListMode(listMode).call();
             for (Ref branch : branches){
-                builder.append('\n');
-                if (branch.getName().equals(currentBranch)) {
+                builder.append('\n').append("  ");
+                String name = branch.getName();
+                if (name.equals("HEAD")){
+                    builder.append(ChatColor.RESET).append("(detached HEAD at ")
+                            .append(ChatColor.AQUA).append(branch.getTarget().getName())
+                            .append(ChatColor.RESET).append(")");
+                    continue;
+                }
+                if (name.equals(fullBranch)) {
                     builder.append(ChatColor.RESET).append("* ").append(ChatColor.GREEN);
                 } else {
-                    builder.append("  ").append(ChatColor.RESET);
+                    builder.append("  ");
                 }
-                builder.append(branch.getName());
+                if (name.startsWith("refs/remotes/")) name = ChatColor.RED + name.substring(13);
+                if (name.startsWith("refs/heads/")) name = ChatColor.GREEN + name.substring(11);
+                builder.append(name);
             }
         } catch (Exception e) {
-            caller.sendErrorMessage(e.getMessage(),serviceName);
+            caller.sendThrowable(e,workspaceName);
             return true;
+        } finally {
+            git.close();
         }
-        caller.sendMessage(builder,serviceName);
+        caller.sendMessage(builder,workspaceName);
         return true;
     }
 
-    private boolean onCommandGitCheckout(Caller caller, String serviceName, Git git, String branch, String startPoint) {
+    private boolean onCommandGitCheckout(Caller caller, String workspaceName, Git git, String branch) {
         try {
-            Ref result = git.checkout()
-                    .setName(branch)
-                    .setForce(true)
-                    .setStartPoint(startPoint)
-                    .call();
-            if (result == null){
-                caller.sendErrorMessage("revisions not supported",serviceName);
-                return true;
-            }
-            caller.sendMessage("switched to "+result.getName(),serviceName);
-        } catch (GitAPIException e) {
-            caller.sendErrorMessage(e.getMessage(),serviceName);
+            git.checkout().setName(branch).call();
+            String fullBranch = git.getRepository().getFullBranch();
+            caller.sendMessage("switched to "+ChatColor.AQUA+fullBranch,workspaceName);
+        } catch (Exception e) {
+            caller.sendErrorMessage(e.getMessage(),workspaceName);
             return true;
+        } finally {
+            git.close();
         }
         return true;
     }
 
-    private boolean onCommandGitClone(Caller caller, String url, String serviceName) {
+    private boolean onCommandGitClone(Caller caller, String url, String folderName) {
         WorkspaceService service = plugin.getWorkspaceService();
         String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
-        if (serviceName == null) try {
-            URIish urish = new URIish(url);
-            serviceName = urish.getHumanishName();
+        if (folderName == null) try {
+            folderName = new URIish(url).getHumanishName();
         } catch (URISyntaxException e){
             caller.sendErrorMessage(e.getMessage(),callerWorkspaceName);
             return true;
         }
-        caller.sendPrintMessage("Cloning "+url+" into "+serviceName,callerWorkspaceName);
+        GitExecutor<Git> executor = new GitExecutor<Git>(caller, callerWorkspaceName, new GitCloneHandler(this,folderName));
+        CloneCommand command = Git.cloneRepository()
+                .setURI(url)
+                .setRemote("origin")
+                .setNoCheckout(true)
+                .setCredentialsProvider(executor)
+                .setProgressMonitor(executor)
+                .setDirectory(new File(service.getServiceDirectory(), folderName));
+        executor.setCommand(command);
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin,executor);
+        return true;
+    }
+
+    public void onCommandGitCloneDone(Caller caller, String callerWorkspaceName, Git result, String folderName){
+        Ref master;
         try {
-            Git.cloneRepository()
-                    .setURI(url)
-                    .setDirectory(new File(service.getServiceDirectory(), serviceName))
-                    .setBare(false)
-                    .setCloneAllBranches(true)
-                    .call();
-        } catch (GitAPIException e){
-            caller.sendErrorMessage(e.getMessage(),callerWorkspaceName);
+            master = result.getRepository().getRef("origin/master");
+        } catch (IOException e) {
+            caller.sendThrowable(e,callerWorkspaceName);
+            return;
+        }
+        if (master != null){
+            try {
+                result.checkout()
+                        .setCreateBranch(false)
+                        .setName(master.getName())
+                        .call();
+                String message = "Done: " + ChatColor.YELLOW + folderName + " now at "+ChatColor.AQUA+master.getName();
+                caller.sendMessage(message, callerWorkspaceName);
+            } catch (GitAPIException e) {
+                caller.sendThrowable(e,callerWorkspaceName);
+            }
+
+        } else {
+            try {
+                List<Ref> refs = result.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
+                StringBuilder buffer = new StringBuilder();
+                buffer.append("Done: ").append(ChatColor.YELLOW).append(folderName);
+                buffer.append(ChatColor.RESET).append(" now select branch:");
+                if (!callerWorkspaceName.equals(folderName)){
+                    buffer.append('\n').append(ChatColor.GOLD).append("/ws set ").append(folderName);
+                }
+                buffer.append('\n').append(ChatColor.GOLD).append("/ws checkout ").append(ChatColor.GREEN).append("branch");
+                buffer.append('\n').append(ChatColor.RESET).append("Branches:");
+                for (Ref ref : refs) {
+                    buffer.append('\n').append(ChatColor.AQUA).append(ref.getName());
+                }
+                caller.sendMessage(buffer, callerWorkspaceName);
+            } catch (GitAPIException e) {
+                caller.sendThrowable(e,callerWorkspaceName);
+            }
+        }
+    }
+
+    private boolean onCommandGitDelete(Caller caller, String workspaceName) {
+        WorkspaceService service = plugin.getWorkspaceService();
+        String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
+        if (workspaceName == null) workspaceName = callerWorkspaceName;
+        File gitDir = new File(service.getServiceDirectory(),workspaceName+"/.git");
+        if (!gitDir.isDirectory()) {
+            caller.sendErrorMessage("No git here",workspaceName);
             return true;
         }
-        caller.sendMessage("Cloning "+ serviceName+" done!",callerWorkspaceName);
+        boolean success = deleteDir(gitDir);
+        if (success) {
+            caller.sendMessage("git of workspace " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " are deleted", callerWorkspaceName);
+        } else {
+            caller.sendMessage("error on deleting " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " git", callerWorkspaceName);
+        }
         return true;
     }
 
@@ -212,29 +328,31 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         return true;
     }
 
-    public boolean onCommandServiceList(Caller caller, String pattern) {
+    private boolean onCommandAutorun(Caller caller, String state, String workspaceName) {
         WorkspaceService service = plugin.getWorkspaceService();
-        String workspaceName = service.getWorkspaceName(caller.getSender());
-        File[] files = service.getServiceDirectory().listFiles();
-        StringBuilder builder = new StringBuilder();
-        builder.append("services:");
-        List<String> autorunList = plugin.getConfig().getStringList("services.autorun");
-        if (files != null) for (File file : files){
-            if (!file.isDirectory()) continue;
-            String fileName = file.getName();
-            if (pattern != null && !fileName.startsWith(pattern)) continue;
-            builder.append("\n");
-            if (autorunList.contains(fileName)){
-                builder.append(ChatColor.GREEN);
-            } else {
-                builder.append(ChatColor.GRAY);
-            }
-            builder.append(fileName);
+        String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
+        if (workspaceName == null) workspaceName = callerWorkspaceName;
+        Boolean autorunState = null;
+        Boolean nowState = service.getWorkspaceAutorunState(workspaceName);
+        if (state != null) {
+            if (state.matches("1|true|yes|y|on|\\+|enable")) autorunState = true;
+            if (state.matches("0|false|no|n|off|\\-|disable")) autorunState = false;
         }
-        caller.sendMessage(builder,workspaceName);
-        return true;
+        if (autorunState == null) {
+            String message = "autorun for " + ChatColor.YELLOW + workspaceName + " is " + (nowState ? "enabled" : "disabled");
+            caller.sendErrorMessage(message, callerWorkspaceName);
+            return true;
+        } else if (nowState == autorunState){
+            String message = "autorun for " + ChatColor.YELLOW + workspaceName + " is already " + (autorunState ? "enabled" : "disabled");
+            caller.sendErrorMessage(message, callerWorkspaceName);
+            return true;
+        } else {
+            service.setWorkspaceAutorunState(workspaceName, autorunState);
+            String message = "autorun for " + ChatColor.YELLOW + workspaceName + " is " + (autorunState ? "enabled" : "disabled")+" now";
+            caller.sendErrorMessage(message, callerWorkspaceName);
+            return true;
+        }
     }
-
 
     private boolean onCommandCreate(Caller caller, String workspaceName) {
         WorkspaceService service = plugin.getWorkspaceService();
@@ -250,7 +368,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         return true;
     }
 
-    private boolean onCommandRemove(Caller caller, String workspaceName) {
+    private boolean onCommandClear(Caller caller, String workspaceName) {
         WorkspaceService service = plugin.getWorkspaceService();
         String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
         if (workspaceName == null) workspaceName = callerWorkspaceName;
@@ -259,9 +377,44 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
             caller.sendErrorMessage("workspace "+workspaceName+" is not exists", callerWorkspaceName);
         } else {
             workspace.removeWorkspace();
-            caller.sendMessage("workspace " + workspaceName + " is removed", callerWorkspaceName);
+            caller.sendMessage("workspace " + workspaceName + " is cleared", callerWorkspaceName);
         }
         return true;
+    }
+
+    private boolean onCommandDelete(Caller caller, String workspaceName) {
+        WorkspaceService service = plugin.getWorkspaceService();
+        String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
+        if (workspaceName == null) workspaceName = callerWorkspaceName;
+        Workspace workspace = service.getWorkspace(workspaceName);
+        if (workspace != null) service.remove(workspace);
+        File autorunFile = new File(service.getAutorunDirectory(),workspaceName+".groovy");
+        boolean success = true;
+        if (autorunFile.isFile() && Workspace.checkCanonicalName(autorunFile) != null){
+            success = autorunFile.delete();
+        }
+        File autorunDir = new File(service.getServiceDirectory(),workspaceName);
+        if (autorunDir.isDirectory() && Workspace.checkCanonicalName(autorunDir) != null){
+            success &= deleteDir(autorunDir);
+        }
+        if (success) {
+            caller.sendMessage("all files of workspace " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " are deleted", callerWorkspaceName);
+        } else {
+            caller.sendMessage("error on deleting " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " files", callerWorkspaceName);
+        }
+        return true;
+    }
+
+    public static boolean deleteDir(File path){
+        if (!path.exists()) return true;
+        boolean ret = true;
+        if (path.isDirectory()){
+            File[] files = path.listFiles();
+            if (files != null) for (File f : files){
+                ret = ret && deleteDir(f);
+            }
+        }
+        return ret && path.delete();
     }
 
     private boolean onCommandReload(Caller caller, String workspaceName) {
@@ -288,21 +441,41 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         return true;
     }
 
-    public boolean onCommandList(Caller caller) {
+    public boolean onCommandList(Caller caller, String prefix) {
         WorkspaceService service = plugin.getWorkspaceService();
         String workspaceName = service.getWorkspaceName(caller.getSender());
-        Workspace[] workspaces = service.getWorkspaces();
-        if (workspaces.length == 0) {
-            caller.sendMessage("no active workspaces", workspaceName);
-        } else {
-            StringBuilder builder = new StringBuilder();
-            builder.append("active workspaces: ");
-            builder.append(workspaces.length);
-            for (Workspace workspace : workspaces) {
-                builder.append('\n').append(workspace.getName());
+        Set<String> activeWorkspaces = new HashSet<String>();
+        Set<String> autorunWorkspaces = new HashSet<String>();
+        Set<String> workspaces = new TreeSet<String>();
+        for (Workspace workspace : service.getWorkspaces()) {
+            if (prefix == null || workspace.getName().startsWith(prefix)) {
+                activeWorkspaces.add(workspace.getName());
+                workspaces.add(workspace.getName());
             }
-            caller.sendMessage(builder.toString(), workspaceName);
         }
+        for (String name : service.getWorkspaceAutoruns()) {
+            if (prefix == null || name.startsWith(prefix)) {
+                autorunWorkspaces.add(name);
+                workspaces.add(name);
+            }
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("workspaces:");
+        for (String name : workspaces) {
+            ChatColor color;
+            if (activeWorkspaces.contains(name)) {
+                if (autorunWorkspaces.contains(name)) {
+                    color = ChatColor.GREEN;
+                } else {
+                    color = ChatColor.YELLOW;
+                }
+            } else {
+                color = ChatColor.GRAY;
+            }
+            builder.append("\n    ").append(color).append(name).append(ChatColor.RESET);
+        }
+        caller.sendMessage(builder.toString(), workspaceName);
         return true;
     }
 

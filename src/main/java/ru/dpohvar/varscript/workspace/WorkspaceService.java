@@ -63,6 +63,7 @@ public class WorkspaceService extends GroovyObjectSupport {
     private final List<GroovyObject> dynamicModifiers = new ArrayList<GroovyObject>();
     private final Map<FileTime,Class> compiledFileTimeCache = new WeakHashMap<FileTime, Class>();
     private final Map<String,Class> importTabCompleteClasses = new HashMap<String, Class>();
+    private final CompilerConfiguration compilerConfiguration;
 
     private Binding binding = new Binding();
 
@@ -77,7 +78,7 @@ public class WorkspaceService extends GroovyObjectSupport {
         this.autorunDirectory = new File(config.getString("sources.autorun"));
         this.scriptsDirectory = new File(config.getString("sources.scripts"));
         this.classesDirectory = new File(config.getString("sources.classes"));
-        this.serviceDirectory = new File(config.getString("services.directory"));
+        this.serviceDirectory = new File(config.getString("sources.services"));
         ImportCustomizer importCustomizer = new ImportCustomizer();
         compilationCustomizers.add(importCustomizer);
         for (Map<?, ?> anImport : config.getMapList("import")) {
@@ -113,13 +114,22 @@ public class WorkspaceService extends GroovyObjectSupport {
         }
         classPath.add(classesDirectory.toString());
 
-        CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
+        compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.setScriptBaseClass(CallerScript.class.getName());
         compilerConfiguration.getCompilationCustomizers().addAll(compilationCustomizers);
         compilerConfiguration.getClasspath().addAll(classPath);
-        String encoding = varscript.getConfig().getString("sources.encoding");
+        String encoding = getSourcesEncoding();
         if (encoding != null) compilerConfiguration.setSourceEncoding(encoding);
         groovyClassLoader = new GroovyClassLoader(VarScript.libLoader, compilerConfiguration);
+        VarScript.libLoader.monitorFolder(groovyClassLoader, serviceDirectory);
+    }
+
+    public CompilerConfiguration getCompilerConfiguration() {
+        return compilerConfiguration;
+    }
+
+    public String getSourcesEncoding(){
+        return varscript.getConfig().getString("sources.encoding");
     }
 
     public GroovyClassLoader getGroovyClassLoader() {
@@ -130,12 +140,29 @@ public class WorkspaceService extends GroovyObjectSupport {
         return dynamicModifiers;
     }
 
+    public boolean getWorkspaceAutorunState(String name){
+        List<String> list = varscript.getConfig().getStringList("autorun");
+        return list != null && list.contains(name);
+    }
+
+    public List<String> getWorkspaceAutoruns(){
+        List<String> list = varscript.getConfig().getStringList("autorun");
+        return new ArrayList<String>(list);
+    }
+
+    public void setWorkspaceAutorunState(String name, boolean status){
+        FileConfiguration config = varscript.getConfig();
+        List<String> list = config.getStringList("autorun");
+        if (status) list.add(name);
+        else list.remove(name);
+        config.set("autorun",list);
+        varscript.saveConfig();
+    }
+
     public void startAutorun(){
-        File[] files = autorunDirectory.listFiles();
-        if (files != null) for (File file : files) {
-            String name = file.getName();
-            if (!name.endsWith(".groovy")) continue;
-            getOrCreateWorkspace(name.substring(0, name.length()-7));
+        List<String> list = varscript.getConfig().getStringList("autorun");
+        if (list != null) for (String name : list) {
+            getOrCreateWorkspace(name);
         }
     }
 

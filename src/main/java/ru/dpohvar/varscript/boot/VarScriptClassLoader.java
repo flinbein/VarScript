@@ -1,9 +1,11 @@
 package ru.dpohvar.varscript.boot;
 
+import groovy.lang.GroovyClassLoader;
 import ru.dpohvar.varscript.utils.ReflectionUtils;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
@@ -61,6 +63,7 @@ public class VarScriptClassLoader extends URLClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        if (folderHasChanges()) return this.loadClass(name);
         Class result = classes.get(name);
         if (result != null) return result;
         String modifiedName = getModifiedClassName(name);
@@ -81,7 +84,7 @@ public class VarScriptClassLoader extends URLClassLoader {
     private final String cbVersionSuffix = ReflectionUtils.getCbVersionSuffix();
     private final String nmsVersionSuffix = ReflectionUtils.getNmsVersionSuffix();
 
-    protected String getModifiedClassName(String className){
+    private String getModifiedClassName(String className){
         boolean useCb = className.startsWith( "org.bukkit.craftbukkit");
         boolean useNms = className.startsWith("net.minecraft.server");
         if (!useCb && !useNms) return null;
@@ -111,6 +114,31 @@ public class VarScriptClassLoader extends URLClassLoader {
             if (nmsVersionSuffix == null) return prefix + postfix;
             else return prefix + "." + nmsVersionSuffix + postfix;
         }
+    }
+
+    public void monitorFolder(GroovyClassLoader groovyClassLoader, File serviceFolder){
+        this.groovyClassLoader = groovyClassLoader;
+        this.serviceFolder = serviceFolder;
+    }
+
+    private GroovyClassLoader groovyClassLoader;
+    private File serviceFolder;
+    private int lastClassLoaderUrlListLength = 0;
+    private boolean folderHasChanges(){
+        if (groovyClassLoader == null || serviceFolder == null) return false;
+        File[] files = serviceFolder.listFiles();
+        if (files != null) for (File file : files) {
+            if (!file.isDirectory()) continue;
+            try {
+                groovyClassLoader.addURL(file.toURI().toURL());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        int urlListLength = groovyClassLoader.getURLs().length;
+        if (lastClassLoaderUrlListLength == urlListLength) return false;
+        lastClassLoaderUrlListLength = urlListLength;
+        return true;
     }
 
 }

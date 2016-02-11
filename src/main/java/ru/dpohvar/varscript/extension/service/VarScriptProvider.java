@@ -31,12 +31,14 @@ import java.util.*;
 public class VarScriptProvider extends GroovyObjectSupport implements VarScriptHook {
 
     private File scriptDirectory;
+    private File autorunDirectory;
     private Server server;
 
     @Override
     public void onEnable(VarScript plugin) {
         WorkspaceService service = plugin.getWorkspaceService();
         scriptDirectory = service.getScriptsDirectory();
+        autorunDirectory = service.getAutorunDirectory();
         server = plugin.getServer();
         plugin.getCommandCompleter().getDelegateCompleters().add(new EntityIdCompleter());
         CallerScript.getDynamicModifiers().add(this);
@@ -60,7 +62,8 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         for (Player player : server.getOnlinePlayers()) {
             result.put(player.getName(), player.getClass());
         }
-        addGroovyFilesToMap(scriptDirectory.listFiles(),result);
+        addGroovyFileNamesToMap(scriptDirectory.listFiles(),result, null);
+        addGroovyFileNamesToMap(autorunDirectory.listFiles(),result, Workspace.class);
         for (Method method : this.getClass().getMethods()) {
             Class<?>[] types = method.getParameterTypes();
             if (types.length == 1 && types[0].equals(ScriptProperties.class)) {
@@ -72,16 +75,16 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
 
     public Map<String,Class> getMethodMapFor(ScriptProperties script){
         Map<String,Class> result = new HashMap<String, Class>();
-        addGroovyFilesToMap(scriptDirectory.listFiles(),result);
+        addGroovyFileNamesToMap(scriptDirectory.listFiles(),result, null);
         return result;
     }
 
-    private void addGroovyFilesToMap(File[] files, Map<String,Class> result){
+    private void addGroovyFileNamesToMap(File[] files, Map<String,Class> result, Class value){
         if (files != null) for (File file : files) {
             String name = file.getName();
             if (!name.endsWith(".groovy")) continue;
             if (name.length() <= 7) continue;
-            result.put(name.substring(0, name.length()-7), null);
+            result.put(name.substring(0, name.length()-7), value);
         }
     }
 
@@ -104,6 +107,13 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         if (world != null) return world;
         Workspace ws = script.getGlobal().getWorkspace(property);
         if (ws != null) return ws;
+        String expectFileName = property+".groovy";
+        File[] autorunFiles = autorunDirectory.listFiles();
+        if (autorunFiles != null) for (File autorunFile : autorunFiles) {
+            if (autorunFile.getName().equals(expectFileName)) {
+                if (autorunFile.isFile()) return script.getGlobal().getOrCreateWorkspace(property);
+            }
+        }
         throw PropertySelector.next;
     }
 

@@ -14,15 +14,15 @@ import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.util.*;
 
-public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolder {
+public class TriggerContainer implements Trigger, TriggerGenerator {
 
     private boolean disabled;
     private final Workspace workspace;
     private final Set<Trigger> parentTriggers;
-    private final TriggerHolder parent;
+    private final TriggerGenerator parent;
     Set<Trigger> triggers = new LinkedHashSet<Trigger>();
 
-    public TriggerContainer(Workspace workspace, TriggerHolder parent, Set<Trigger> parentTriggers){
+    public TriggerContainer(Workspace workspace, TriggerGenerator parent, Set<Trigger> parentTriggers){
         this.workspace = workspace;
         this.parentTriggers = parentTriggers;
         this.parent = parent;
@@ -30,7 +30,7 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
     }
 
     @Override
-    public TriggerHolder getParent() {
+    public TriggerGenerator getParent() {
         return parent;
     }
 
@@ -55,6 +55,12 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
         if (disabled) return false;
         disabled = true;
         if (parentTriggers != null) parentTriggers.remove(this);
+        stopTriggers();
+        return true;
+    }
+
+    @Override
+    public void stopTriggers() {
         for (Trigger trigger : getTriggers()) {
             trigger.stop();
             if (trigger instanceof StopHookTrigger) try {
@@ -64,7 +70,6 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
                 caller.sendThrowable(e, workspace.getName());
             }
         }
-        return true;
     }
 
     @Override
@@ -196,12 +201,7 @@ public class TriggerContainer implements Trigger, TriggerGenerator, TriggerHolde
 
     @Override
     public TriggerContainer generator() {
-        return new TriggerContainer(workspace, this, parentTriggers);
-    }
-
-    @Override
-    public void stopTriggers() {
-        stop();
+        return new TriggerContainer(workspace, this, triggers);
     }
 
     @Override

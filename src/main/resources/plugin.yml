@@ -8,14 +8,12 @@ softdepend: [PowerNBT]
 
 commands:
   script:
-    description: run code
+    description: run line
     aliases: ['>', g>]
+    usage: /> {groovy script ...} | scriptName [arg1[,arg2 ...[,argN]]]
     permission: varscript.run
   workspace:
     description: manage workspaces
     aliases: [workspaces, ws]
+    usage: see /ws help
     permission: varscript.workspace
-  service:
-    description: manage services
-    aliases: [services, sv]
-    permission: varscript.service

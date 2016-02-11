@@ -68,7 +68,7 @@ public class GroovyCommandCompleter implements TabCompleter {
 
         if (needHelp) {
             getHelp(caller, workspace, tokens);
-            return Arrays.asList(expression);
+            return Collections.singletonList(expression);
         }
 
         String firstToken = tokens.pollFirst();

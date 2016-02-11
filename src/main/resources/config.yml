@@ -8,9 +8,8 @@ sources:
   autorun: plugins/${project.artifactId}/autorun
   scripts: plugins/${project.artifactId}/scripts
   classes: plugins/${project.artifactId}/scripts
+  services: plugins/${project.artifactId}/autorun
   encoding: UTF-8
-services:
-  directory: plugins/${project.artifactId}/services
 import:
 - scan-package: org.bukkit
 - scan-package: org.bukkit.block

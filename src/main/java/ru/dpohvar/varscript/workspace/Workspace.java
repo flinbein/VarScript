@@ -11,22 +11,24 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import ru.dpohvar.varscript.VarScript;
+import org.yaml.snakeyaml.Yaml;
 import ru.dpohvar.varscript.caller.Caller;
+import ru.dpohvar.varscript.event.CompileFileEvent;
+import ru.dpohvar.varscript.event.CompileScriptEvent;
 import ru.dpohvar.varscript.trigger.*;
 import ru.dpohvar.varscript.utils.FileTime;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
-public class Workspace extends GroovyObjectSupport implements TriggerHolder, TriggerGenerator {
+public class Workspace extends GroovyObjectSupport implements TriggerGenerator {
 
     private boolean disabled = false;
     private boolean removed = false;
     private final String name;
     private final WorkspaceService workspaceService;
     private final File autorunFile;
+    private final File autorunDirectory;
     private final GroovyClassLoader groovyClassLoader;
     private final CompilerConfiguration compilerConfiguration;
     private final Binding binding = new Binding();
@@ -37,6 +39,7 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         this.name = name;
         File autorunDirectory = workspaceService.getAutorunDirectory();
         autorunFile = new File(autorunDirectory, name+".groovy");
+        this.autorunDirectory = new File(autorunDirectory, name);
         compilerConfiguration = new CompilerConfiguration();
         compilerConfiguration.setScriptBaseClass(CallerScript.class.getName());
         List<CompilationCustomizer> compilationCustomizers = compilerConfiguration.getCompilationCustomizers();
@@ -45,6 +48,11 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         if (encoding != null) compilerConfiguration.setSourceEncoding(encoding);
         compilationCustomizers.addAll(workspaceService.getCompilationCustomizers());
         groovyClassLoader = new GroovyClassLoader(workspaceService.getGroovyClassLoader(), compilerConfiguration);
+    }
+
+    @Override
+    public Workspace getWorkspace() {
+        return this;
     }
 
     public WorkspaceService getWorkspaceService() {
@@ -67,14 +75,47 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         return autorunFile;
     }
 
+    public File getAutorunFileExists() {
+        if (!autorunFile.isFile()) return null;
+        return checkCanonicalName(autorunFile);
+    }
+
+    public static File checkCanonicalName(File file){
+        try { // check file name for non-case-sensitive FS
+            String canonicalName = file.getCanonicalFile().getName();
+            if (!canonicalName.equals(file.getName())) return null;
+        } catch (IOException e) {
+            return null;
+        }
+        return file;
+    }
+
+    public File getAutorunDirectory() {
+        return autorunDirectory;
+    }
+
+    public File getAutorunDirectoryExists() {
+        if (!autorunDirectory.isDirectory()) return null;
+        return checkCanonicalName(autorunDirectory);
+    }
+
     public Binding getBinding() {
         return binding;
     }
 
     public Object doAutorun(){
-        if (!autorunFile.isFile()) return null;
-        VarScript plugin = workspaceService.getVarScript();
-        Caller caller = plugin.getCallerService().getConsoleCaller();
+        Object result = null;
+        Caller caller = workspaceService.getVarScript().getCallerService().getConsoleCaller();
+        if (getAutorunDirectoryExists() != null) {
+            result = doAutorunService(caller);
+        }
+        if (getAutorunFileExists() != null) {
+            result = doAutorunFile(caller);
+        }
+        return result;
+    }
+
+    public Object doAutorunFile(Caller caller){
         try {
             return executeScript(caller, autorunFile, null);
         } catch (Throwable e) {
@@ -83,8 +124,56 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
         }
     }
 
+    private Object doAutorunService(Caller caller){
+        String serviceFileName = readYamlAutorunName();
+        if (serviceFileName == null) serviceFileName = "main.groovy";
+        File serviceFile = checkCanonicalName(new File(autorunDirectory, serviceFileName));
+        if (serviceFile == null) return null;
+        try {
+            return executeScript(caller, serviceFile, null);
+        } catch (Throwable e) {
+            caller.sendThrowable(e, this.getName());
+            return null;
+        }
+    }
+
+    private String readYamlAutorunName(){
+        File yamlFile = new File(autorunDirectory, "config.yml");
+        InputStream inputStream = null;
+        try {
+            inputStream = new FileInputStream(yamlFile);
+            InputStreamReader reader;
+            String charset = workspaceService.getSourcesEncoding();
+            if (charset == null) reader = new InputStreamReader(inputStream);
+            else reader = new InputStreamReader(inputStream, charset);
+            Yaml yaml = new Yaml();
+            Object data = yaml.load(reader);
+            if (!(data instanceof Map)) return null;
+            Object main = ((Map) data).get("main");
+            if (main instanceof String) return (String) main;
+            else return null;
+        } catch (FileNotFoundException e) {
+            return null;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } finally {
+            if (inputStream != null) try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
     public Object compileScript(Caller caller, String script, Binding binding) throws IllegalAccessException, InstantiationException {
         if (caller == null) caller = getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
+
+        CompileScriptEvent event = new CompileScriptEvent(caller, script, this);
+        workspaceService.getVarScript().getServer().getPluginManager().callEvent(event);
+        script = event.getScript();
+        if (event.isCancelled() || script == null) return null;
+
         String scriptName = caller.getSender().getName() + "@" + this.name;
         String hashString = scriptName + '\t' + script;
         Class scriptClass = cacheClasses.get(hashString);
@@ -98,6 +187,13 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     }
 
     public Object compileScript(Caller caller, File file, Binding binding) throws IllegalAccessException, InstantiationException, IOException {
+
+        CompileFileEvent event = new CompileFileEvent(caller, file, this);
+        workspaceService.getVarScript().getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return null;
+        file = event.getFile();
+
+
         if (!file.isFile()) throw new IllegalArgumentException("file not found: "+file);
         FileTime fileTime = new FileTime(file);
         Class scriptClass = workspaceService.getCompiledFileTimeCache(fileTime);
@@ -309,12 +405,12 @@ public class Workspace extends GroovyObjectSupport implements TriggerHolder, Tri
     }
 
     @Override
-    public TriggerContainer generator() {
+    public TriggerGenerator generator() {
         return new TriggerContainer(this, this, triggers);
     }
 
     @Override
-    public TriggerHolder getParent() {
+    public TriggerGenerator getParent() {
         return null;
     }
 

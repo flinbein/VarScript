@@ -6,10 +6,19 @@ import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.SimpleType;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
+import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.util.List;
 
 public interface TriggerGenerator {
+
+    public void stopTriggers();
+
+    public int triggerCount();
+
+    public Workspace getWorkspace();
+
+    public Trigger[] getTriggers();
 
     public boolean isDisabled();
 
@@ -29,7 +38,7 @@ public interface TriggerGenerator {
 
     public BukkitEventTrigger listen(EventPriority priority, Closure closure);
 
-    public TriggerContainer generator();
+    public TriggerGenerator generator();
 
     public BukkitTimeoutTrigger timeout(long timeout, boolean sync);
 
@@ -61,5 +70,5 @@ public interface TriggerGenerator {
 
     public CommandTrigger command(Object params);
 
-    public TriggerHolder getParent();
+    public TriggerGenerator getParent();
 }
