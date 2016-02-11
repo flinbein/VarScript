@@ -4,7 +4,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.scheduler.BukkitScheduler;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
@@ -12,7 +11,6 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.URIish;
@@ -36,7 +34,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
             "\n&e/ws git log &7[&6<ref>&7]&r" +
             "\n&e/ws git checkout &6<branch>&7|&6<commit>&r" +
             "\n&e/ws git fetch &6<remote>&r" +
-            "\n&e/ws git delete &7[&6<name>&7]&r"
+            "\n&e/ws git delete-files &7[&6<name>&7]&r"
     );
     private static final String wsUsage = ChatColor.translateAlternateColorCodes('&',"Workspace usage:" +
             "\n&e/ws" +
@@ -45,7 +43,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
             "\n&e/ws create &7[&6<name>&7]&r" +
             "\n&e/ws reload &7[&6<name>&7]&r" +
             "\n&e/ws stop &7[&6<name>&7]&r" +
-            "\n&e/ws clear &7[&6<name>&7]&r" +
+            "\n&e/ws remove &7[&6<name>&7]&r" +
             "\n&e/ws delete &7[&6<name>&7]&r" +
             "\n&e/ws autorun &7[&eon&7|&eoff&7 [&6<name>&7]]&r" +
             "\n&e/ws git help&r"
@@ -62,8 +60,8 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         if (strings.length == 0) return onCommandEmpty(caller);
 
         if (strings.length == 1 && strings[0].equals("list")) return onCommandList(caller, null);
-        if (strings.length == 1 && strings[0].equals("clear")) return onCommandClear(caller, null);
-        if (strings.length == 1 && strings[0].equals("delete")) return onCommandDelete(caller, null);
+        if (strings.length == 1 && strings[0].equals("remove")) return onCommandRemove(caller, null);
+        if (strings.length == 1 && strings[0].equals("delete-files")) return onCommandDelete(caller, null);
         if (strings.length == 1 && strings[0].equals("reload")) return onCommandReload(caller, null);
         if (strings.length == 1 && strings[0].equals("create")) return onCommandCreate(caller, null);
         if (strings.length == 1 && strings[0].equals("stop")) return onCommandStop(caller, null);
@@ -71,8 +69,8 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
 
         if (strings.length == 2 && strings[0].equals("list")) return onCommandList(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("set")) return onCommandSet(caller, strings[1]);
-        if (strings.length == 2 && strings[0].equals("clear")) return onCommandClear(caller, strings[1]);
-        if (strings.length == 2 && strings[0].equals("delete")) return onCommandDelete(caller, strings[1]);
+        if (strings.length == 2 && strings[0].equals("remove")) return onCommandRemove(caller, strings[1]);
+        if (strings.length == 2 && strings[0].equals("delete-files")) return onCommandDelete(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("reload")) return onCommandReload(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("create")) return onCommandCreate(caller, strings[1]);
         if (strings.length == 2 && strings[0].equals("stop")) return onCommandStop(caller, strings[1]);
@@ -187,16 +185,17 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
                     return true;
                 }
             }
-            String fullBranch = git.getRepository().getFullBranch();
-            builder.append("current branch: ").append(ChatColor.AQUA).append(fullBranch).append(ChatColor.RESET);
-            builder.append("\nbranches:");
+            Repository repository = git.getRepository();
+            String fullBranch = repository.getFullBranch();
+            builder.append("branches:");
             List<Ref> branches = git.branchList().setListMode(listMode).call();
             for (Ref branch : branches){
-                builder.append('\n').append("  ");
+                builder.append('\n');
                 String name = branch.getName();
+                ObjectId objectId = repository.resolve(name);
                 if (name.equals("HEAD")){
-                    builder.append(ChatColor.RESET).append("(detached HEAD at ")
-                            .append(ChatColor.AQUA).append(branch.getTarget().getName())
+                    builder.append(ChatColor.GREEN).append("* ").append(ChatColor.RESET).append("(detached HEAD at ")
+                            .append(ChatColor.AQUA).append(objectId.getName())
                             .append(ChatColor.RESET).append(")");
                     continue;
                 }
@@ -207,7 +206,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
                 }
                 if (name.startsWith("refs/remotes/")) name = ChatColor.RED + name.substring(13);
                 if (name.startsWith("refs/heads/")) name = ChatColor.GREEN + name.substring(11);
-                builder.append(name);
+                builder.append(name).append(ChatColor.RESET).append(" - ").append(ChatColor.AQUA).append(objectId.getName());
             }
         } catch (Exception e) {
             caller.sendThrowable(e,workspaceName);
@@ -265,11 +264,13 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         }
         if (master != null){
             try {
+                String name = master.getName();
                 result.checkout()
                         .setCreateBranch(false)
-                        .setName(master.getName())
+                        .setName(name)
                         .call();
-                String message = "Done: " + ChatColor.YELLOW + folderName + " now at "+ChatColor.AQUA+master.getName();
+                if (name.startsWith("refs/remotes/")) name = name.substring(13);
+                String message = "Done: " + ChatColor.YELLOW + folderName + ChatColor.RESET +" now at "+ChatColor.AQUA+ name;
                 caller.sendMessage(message, callerWorkspaceName);
             } catch (GitAPIException e) {
                 caller.sendThrowable(e,callerWorkspaceName);
@@ -335,21 +336,21 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         Boolean autorunState = null;
         Boolean nowState = service.getWorkspaceAutorunState(workspaceName);
         if (state != null) {
-            if (state.matches("1|true|yes|y|on|\\+|enable")) autorunState = true;
-            if (state.matches("0|false|no|n|off|\\-|disable")) autorunState = false;
+            if (state.matches("1|true|yes|y|on|\\+|enable|set|add")) autorunState = true;
+            if (state.matches("0|false|no|n|off|\\-|disable|stop|remove|rm")) autorunState = false;
         }
         if (autorunState == null) {
-            String message = "autorun for " + ChatColor.YELLOW + workspaceName + " is " + (nowState ? "enabled" : "disabled");
-            caller.sendErrorMessage(message, callerWorkspaceName);
+            String message = "autorun for " + ChatColor.YELLOW + workspaceName + ChatColor.RESET + " is " + (nowState ? "enabled" : "disabled");
+            caller.sendMessage(message, callerWorkspaceName);
             return true;
         } else if (nowState == autorunState){
-            String message = "autorun for " + ChatColor.YELLOW + workspaceName + " is already " + (autorunState ? "enabled" : "disabled");
-            caller.sendErrorMessage(message, callerWorkspaceName);
+            String message = "autorun for " + ChatColor.YELLOW + workspaceName + ChatColor.RESET + " is already " + (autorunState ? "enabled" : "disabled");
+            caller.sendMessage(message, callerWorkspaceName);
             return true;
         } else {
             service.setWorkspaceAutorunState(workspaceName, autorunState);
-            String message = "autorun for " + ChatColor.YELLOW + workspaceName + " is " + (autorunState ? "enabled" : "disabled")+" now";
-            caller.sendErrorMessage(message, callerWorkspaceName);
+            String message = "autorun for " + ChatColor.YELLOW + workspaceName + ChatColor.RESET + " is " + (autorunState ? "enabled" : "disabled")+" now";
+            caller.sendMessage(message, callerWorkspaceName);
             return true;
         }
     }
@@ -368,7 +369,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         return true;
     }
 
-    private boolean onCommandClear(Caller caller, String workspaceName) {
+    private boolean onCommandRemove(Caller caller, String workspaceName) {
         WorkspaceService service = plugin.getWorkspaceService();
         String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
         if (workspaceName == null) workspaceName = callerWorkspaceName;
@@ -387,20 +388,30 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
         if (workspaceName == null) workspaceName = callerWorkspaceName;
         Workspace workspace = service.getWorkspace(workspaceName);
-        if (workspace != null) service.remove(workspace);
+        if (workspace != null) {
+            String message = "workspace " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " is enabled!\n" +
+                    "use \""+ChatColor.GOLD+"/ws remove "+workspaceName + ChatColor.RESET + "\" to disable workspace.";
+            caller.sendErrorMessage(message, callerWorkspaceName);
+            return true;
+        }
         File autorunFile = new File(service.getAutorunDirectory(),workspaceName+".groovy");
+        boolean hasFiles = false;
         boolean success = true;
         if (autorunFile.isFile() && Workspace.checkCanonicalName(autorunFile) != null){
+            hasFiles = true;
             success = autorunFile.delete();
         }
         File autorunDir = new File(service.getServiceDirectory(),workspaceName);
         if (autorunDir.isDirectory() && Workspace.checkCanonicalName(autorunDir) != null){
+            hasFiles = true;
             success &= deleteDir(autorunDir);
         }
-        if (success) {
+        if (!hasFiles) {
+            caller.sendMessage("workspace " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " has no files", callerWorkspaceName);
+        } else if (success) {
             caller.sendMessage("all files of workspace " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " are deleted", callerWorkspaceName);
         } else {
-            caller.sendMessage("error on deleting " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " files", callerWorkspaceName);
+            caller.sendErrorMessage("error on deleting " +ChatColor.YELLOW+ workspaceName+ChatColor.RESET + " files", callerWorkspaceName);
         }
         return true;
     }
@@ -446,34 +457,76 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         String workspaceName = service.getWorkspaceName(caller.getSender());
         Set<String> activeWorkspaces = new HashSet<String>();
         Set<String> autorunWorkspaces = new HashSet<String>();
-        Set<String> workspaces = new TreeSet<String>();
+        Set<String> codeWorkspaces = new HashSet<String>();
+        Set<String> gitWorkspaces = new HashSet<String>();
+        Set<String> allWorkspaces = new TreeSet<String>();
         for (Workspace workspace : service.getWorkspaces()) {
             if (prefix == null || workspace.getName().startsWith(prefix)) {
                 activeWorkspaces.add(workspace.getName());
-                workspaces.add(workspace.getName());
+                allWorkspaces.add(workspace.getName());
             }
         }
         for (String name : service.getWorkspaceAutoruns()) {
             if (prefix == null || name.startsWith(prefix)) {
                 autorunWorkspaces.add(name);
-                workspaces.add(name);
+                allWorkspaces.add(name);
             }
+        }
+        File[] files = service.getAutorunDirectory().listFiles();
+        if (files != null) for (File file : files) {
+            if (!file.isFile()) continue;
+            String fileName = file.getName();
+            if (!fileName.endsWith(".groovy")||fileName.length()<8) continue;
+            String name = fileName.substring(0, fileName.length()-7);
+            if (codeWorkspaces.contains(name)) continue;
+            if (prefix != null && !name.startsWith(prefix)) continue;
+            codeWorkspaces.add(name);
+            allWorkspaces.add(name);
+        }
+        files = service.getServiceDirectory().listFiles();
+        if (files != null) for (File file : files) {
+            if (!file.isDirectory()) continue;
+            String name = file.getName();
+            if (codeWorkspaces.contains(name)) continue;
+            if (prefix != null && !name.startsWith(prefix)) continue;
+            codeWorkspaces.add(name);
+            allWorkspaces.add(name);
+            File gitDir = new File(file,".git");
+            if (!gitDir.isDirectory()) continue;
+            gitWorkspaces.add(name);
         }
 
         StringBuilder builder = new StringBuilder();
         builder.append("workspaces:");
-        for (String name : workspaces) {
-            ChatColor color;
+        for (String name : allWorkspaces) {
+            builder.append("\n    ");
+            String preColor = "";
             if (activeWorkspaces.contains(name)) {
                 if (autorunWorkspaces.contains(name)) {
-                    color = ChatColor.GREEN;
+                    preColor += ChatColor.GREEN;
+                    if (!codeWorkspaces.contains(name)){
+                        preColor += ChatColor.STRIKETHROUGH;
+                    }
                 } else {
-                    color = ChatColor.YELLOW;
+                    preColor += ChatColor.YELLOW;
                 }
             } else {
-                color = ChatColor.GRAY;
+                if (autorunWorkspaces.contains(name)){
+                    preColor += ChatColor.RED;
+                    if (!codeWorkspaces.contains(name)){
+                        preColor += ChatColor.STRIKETHROUGH;
+                    }
+                } else {
+                    preColor += ChatColor.GRAY;
+                }
             }
-            builder.append("\n    ").append(color).append(name).append(ChatColor.RESET);
+            builder.append(preColor).append(name).append(ChatColor.RESET);
+            builder.append("    (").append(activeWorkspaces.contains(name)?"enabled":"disabled");
+            if (autorunWorkspaces.contains(name)) builder.append(",autorun");
+            if (codeWorkspaces.contains(name)) builder.append(",script");
+            if (gitWorkspaces.contains(name)) builder.append(",git");
+            builder.append(")");
+
         }
         caller.sendMessage(builder.toString(), workspaceName);
         return true;

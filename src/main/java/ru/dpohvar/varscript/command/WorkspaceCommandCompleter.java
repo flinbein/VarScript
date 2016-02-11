@@ -24,7 +24,7 @@ import java.util.List;
 
 public class WorkspaceCommandCompleter implements TabCompleter {
 
-    private static final List<String> commands = Arrays.asList("list", "set", "reload", "clear", "create","delete", "stop", "git");
+    private static final List<String> commands = Arrays.asList("list", "set", "reload", "remove", "create","delete-files", "stop", "git", "autorun");
     private final VarScript plugin;
 
     public WorkspaceCommandCompleter(VarScript plugin) {
@@ -46,13 +46,13 @@ public class WorkspaceCommandCompleter implements TabCompleter {
         WorkspaceService service = plugin.getWorkspaceService();
         if (strings.length == 2) {
             List<String> result = new ArrayList<String>();
-            if (cmd.equals("reload")||cmd.equals("clear")||cmd.equals("stop")||cmd.equals("set")||cmd.equals("list")) {
+            if (cmd.equals("reload")||cmd.equals("remove")||cmd.equals("stop")||cmd.equals("set")||cmd.equals("list")||cmd.equals("clear")) {
                 for (Workspace workspace : service.getWorkspaces()) {
                     String name = workspace.getName();
                     if (name.startsWith(strings[1])) result.add(name);
                 }
             }
-            if (cmd.equals("reload")||cmd.equals("create")||cmd.equals("list")) {
+            if (cmd.equals("reload")||cmd.equals("create")||cmd.equals("list")||cmd.equals("delete-files")) {
                 File[] files = service.getAutorunDirectory().listFiles();
                 if (files != null) for (File file : files) {
                     if (!file.isFile()) continue;
@@ -69,15 +69,15 @@ public class WorkspaceCommandCompleter implements TabCompleter {
                 }
             }
             if (cmd.equals("autorun")){
-                if ("on".startsWith(strings[1])) result.add("on");
-                if ("off".startsWith(strings[1])) result.add("off");
+                if ("add".startsWith(strings[1])) result.add("add");
+                if ("remove".startsWith(strings[1])) result.add("remove");
             }
             return result;
         }
         if (strings.length == 3 && cmd.equals("autorun")){
             List<String> result = new ArrayList<String>();
             String pattern = strings[2];
-            if (strings[1].matches("1|true|yes|y|on|\\+|enable")){
+            if (strings[1].matches("1|true|yes|y|on|\\+|enable|set|add")){
                 File[] files = service.getAutorunDirectory().listFiles();
                 if (files != null) for (File file : files) {
                     if (!file.isFile()) continue;
@@ -85,16 +85,16 @@ public class WorkspaceCommandCompleter implements TabCompleter {
                     if (!fileName.endsWith(".groovy")||fileName.length()<8) continue;
                     String name = fileName.substring(0, fileName.length()-7);
                     if (service.getWorkspaceAutorunState(name)) continue;
-                    if (!result.contains(name) && name.startsWith(strings[1])) result.add(name);
+                    if (!result.contains(name) && name.startsWith(pattern)) result.add(name);
                 }
                 files = service.getServiceDirectory().listFiles();
                 if (files != null) for (File file : files) {
                     if (!file.isDirectory()) continue;
                     String name = file.getName();
                     if (service.getWorkspaceAutorunState(name)) continue;
-                    if (!result.contains(name) && name.startsWith(strings[1])) result.add(name);
+                    if (!result.contains(name) && name.startsWith(pattern)) result.add(name);
                 }
-            } else if (strings[1].matches("0|false|no|n|off|\\-|disable")){
+            } else if (strings[1].matches("0|false|no|n|off|\\-|disable|stop|remove|rm")){
                 for (String name : service.getWorkspaceAutoruns()) {
                     if (!result.contains(name) && name.startsWith(pattern)) result.add(name);
                 }
