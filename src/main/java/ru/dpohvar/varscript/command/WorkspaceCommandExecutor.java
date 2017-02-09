@@ -31,6 +31,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
     private static final String gitUsage = ChatColor.translateAlternateColorCodes('&',"Git usage:" +
             "\n&e/ws git clone &6<url> &7[&6<name>&7]&r" +
             "\n&e/ws git branch &7[&eremote&7|&eall&7]&r" +
+            "\n&e/ws git tag &7[&6<pattern>&7]&r" +
             "\n&e/ws git log &7[&6<ref>&7]&r" +
             "\n&e/ws git checkout &6<branch>&7|&6<commit>&r" +
             "\n&e/ws git fetch &6<remote>&r" +
@@ -107,6 +108,9 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
 
             if (strings.length == 2 && strings[1].equals("branch")) return onCommandGitBranch(caller, workspaceName, git, null);
             if (strings.length == 3 && strings[1].equals("branch")) return onCommandGitBranch(caller, workspaceName, git, strings[2]);
+
+            if (strings.length == 2 && strings[1].equals("tag")) return onCommandGitTag(caller, workspaceName, git, null);
+            if (strings.length == 3 && strings[1].equals("tag")) return onCommandGitTag(caller, workspaceName, git, strings[2]);
 
             if (strings.length == 2 && strings[1].equals("fetch")) return onCommandGitFetch(caller, workspaceName, git, null);
             if (strings.length == 3 && strings[1].equals("fetch")) return onCommandGitFetch(caller, workspaceName, git, strings[2]);
@@ -195,7 +199,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
                 ObjectId objectId = repository.resolve(name);
                 if (name.equals("HEAD")){
                     builder.append(ChatColor.GREEN).append("* ").append(ChatColor.RESET).append("(detached HEAD at ")
-                            .append(ChatColor.AQUA).append(objectId.getName())
+                            .append(ChatColor.AQUA).append(objectId.getName().substring(0,7))
                             .append(ChatColor.RESET).append(")");
                     continue;
                 }
@@ -206,7 +210,45 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
                 }
                 if (name.startsWith("refs/remotes/")) name = ChatColor.RED + name.substring(13);
                 if (name.startsWith("refs/heads/")) name = ChatColor.GREEN + name.substring(11);
-                builder.append(name).append(ChatColor.RESET).append(" - ").append(ChatColor.AQUA).append(objectId.getName());
+                builder.append(name)
+                        .append(ChatColor.RESET)
+                        .append(" - ")
+                        .append(ChatColor.AQUA)
+                        .append(objectId.getName().substring(0,7))
+                        .append(ChatColor.RESET);
+            }
+        } catch (Exception e) {
+            caller.sendThrowable(e,workspaceName);
+            return true;
+        } finally {
+            git.close();
+        }
+        caller.sendMessage(builder,workspaceName);
+        return true;
+    }
+
+    private boolean onCommandGitTag(Caller caller, String workspaceName, Git git, String pattern){
+        StringBuilder builder = new StringBuilder();
+        try {
+            Repository repository = git.getRepository();
+            builder.append("tags:");
+            List<Ref> tags = git.tagList().call();
+            for (Ref tag : tags){
+                String name = tag.getName();
+                String displayName = name;
+                if (name.startsWith("refs/tags/")) displayName = name.substring(10);
+                if (pattern != null && pattern.length() > 0) {
+                    if (!displayName.startsWith(pattern)) continue;
+                }
+                ObjectId objectId = repository.resolve(name);
+                builder.append("\n  ")
+                        .append(ChatColor.YELLOW)
+                        .append(displayName)
+                        .append(ChatColor.RESET)
+                        .append(" - ")
+                        .append(ChatColor.AQUA)
+                        .append(objectId.getName().substring(0,7))
+                        .append(ChatColor.RESET);
             }
         } catch (Exception e) {
             caller.sendThrowable(e,workspaceName);

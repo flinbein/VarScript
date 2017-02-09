@@ -3,3 +3,4 @@ VarScript.iml
 target
 out
 doc
+**/resources/rebel.xml

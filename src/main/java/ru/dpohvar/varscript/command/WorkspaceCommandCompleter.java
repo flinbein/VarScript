@@ -104,7 +104,7 @@ public class WorkspaceCommandCompleter implements TabCompleter {
         return null;
     }
 
-    private static final List<String> gitCommands = Arrays.asList("clone", "checkout", "branch", "log", "fetch", "delete");
+    private static final List<String> gitCommands = Arrays.asList("clone", "checkout", "branch", "tag", "log", "fetch", "delete");
     private List<String> completeGit(CommandSender commandSender, String[] strings) {
         String gitCommand = strings[1];
 
@@ -187,15 +187,15 @@ public class WorkspaceCommandCompleter implements TabCompleter {
                     git = new Git(new FileRepository(gitDir));
                     List<String> result = new ArrayList<String>();
                     List<Ref> branches = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
-                    ObjectId resolve = null;
-                    try {
-                        resolve = git.getRepository().resolve(repo);
-                    }  catch (Exception ignored){}
-                    if (resolve != null) result.add(resolve.getName());
-                    for (Ref branch : branches) {
-                        String name = branch.getName();
+                    List<Ref> tags = git.tagList().call();
+                    List<Ref> refs = new ArrayList<Ref>();
+                    refs.addAll(branches);
+                    refs.addAll(tags);
+                    for (Ref ref : refs) {
+                        String name = ref.getName();
                         if (name.startsWith("refs/remotes/")) name = name.substring(13);
                         if (name.startsWith("refs/heads/")) name = name.substring(11);
+                        if (name.startsWith("refs/tags/")) name = name.substring(10);
                         if (name.startsWith(repo) && !result.contains(name)) result.add(name);
                     }
                     return result;
@@ -207,6 +207,36 @@ public class WorkspaceCommandCompleter implements TabCompleter {
                 }
             }
         }
+
+        if (gitCommand.equals("tag")||gitCommand.equals("log")) {
+            String tagName = strings[2];
+            File gitDir = new File(service.getServiceDirectory(),serviceName+"/.git");
+            if (!gitDir.isDirectory()) {
+                caller.sendErrorMessage("No git here",serviceName);
+                return null;
+            }
+            if (strings.length == 3) {
+                Git git = null;
+                try {
+                    git = new Git(new FileRepository(gitDir));
+                    List<String> result = new ArrayList<String>();
+                    List<Ref> tags = git.tagList().call();
+                    ObjectId resolve = null;
+                    for (Ref tag : tags) {
+                        String name = tag.getName();
+                        if (name.startsWith("refs/tags/")) name = name.substring(10);
+                        if (name.startsWith(tagName) && !result.contains(name)) result.add(name);
+                    }
+                    return result;
+                } catch (Exception e) {
+                    caller.sendThrowable(e,serviceName);
+                    return null;
+                } finally {
+                    if (git != null) git.close();
+                }
+            }
+        }
+
         return null;
     }
 }

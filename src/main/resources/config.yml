@@ -1,6 +1,6 @@
 ivy:
   log-level: 2
-  download-url: http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy-version}/ivy-${ivy-version}.jar
+  download-url: http://central.maven.org/maven2/org/apache/ivy/ivy/${ivy-version}/ivy-${ivy-version}.jar
   jar: plugins/${project.artifactId}/ivy/ivy-${ivy-version}.jar
   cache: plugins/${project.artifactId}/ivy
 libraries: plugins/${project.artifactId}/lib
