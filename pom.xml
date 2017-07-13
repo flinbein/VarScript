@@ -2,6 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
@@ -11,12 +12,12 @@
 
         <java-version>1.6</java-version>
 
-        <bukkit-version>1.8.8-R0.1-SNAPSHOT</bukkit-version>
-        <spigot-version>1.8.8-R0.1-SNAPSHOT</spigot-version>
+        <bukkit-version>1.12-R0.1-SNAPSHOT</bukkit-version>
+        <spigot-version>1.12-R0.1-SNAPSHOT</spigot-version>
         <ivy-version>2.4.0</ivy-version>
-        <powernbt-version>0.8.4.1</powernbt-version>
-        <groovy-version>2.4.8</groovy-version>
-        <jgit-version>4.6.0.201612231935-r</jgit-version>
+        <powernbt-version>0.8.7</powernbt-version>
+        <groovy-version>2.4.12</groovy-version>
+        <jgit-version>4.8.0.201706111038-r</jgit-version>
 
         <github.global.server>github</github.global.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,7 +33,7 @@
 
     <groupId>ru.dpohvar.varscript</groupId>
     <artifactId>VarScript</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
     <packaging>jar</packaging>
 
     <description>Powerful Scripting Plugin</description>
@@ -46,16 +47,16 @@
     </scm>
 
     <distributionManagement>
-        <downloadUrl>http://dev.bukkit.org/bukkit-plugins/varscript/</downloadUrl>
+        <downloadUrl>https://repo.varscript.ru/release/ru/dpohvar/varscript/VarScript/</downloadUrl>
         <snapshotRepository>
             <id>dpohvar.ru</id>
             <name>dpohvar.ru-snapshots</name>
-            <url>http://repo.varscript.ru/artifactory/snapshots</url>
+            <url>https://repo.varscript.ru/snapshots</url>
         </snapshotRepository>
         <repository>
-            <id>dpohvar.ru</id>
-            <name>dpohvar.ru-releases</name>
-            <url>http://repo.varscript.ru/artifactory/release</url>
+            <id>repo.varscript.ru</id>
+            <name>repo.varscript.ru-releases</name>
+            <url>https://repo.varscript.ru/release</url>
         </repository>
     </distributionManagement>
 
@@ -65,15 +66,15 @@
             <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
         </repository>
         <repository>
-            <id>dpohvar.ru-releases</id>
-            <name>dpohvar.ru-releases</name>
-            <url>http://dpohvar.ru/artifactory/release</url>
+            <id>repo.varscript.ru-releases</id>
+            <name>repo.varscript.ru-releases</name>
+            <url>https://repo.varscript.ru/release</url>
         </repository>
 
         <repository>
-            <id>dpohvar.ru-snapshots</id>
-            <name>dpohvar.ru-snapshots</name>
-            <url>http://dpohvar.ru/artifactory/snapshots</url>
+            <id>repo.varscript.ru-snapshots</id>
+            <name>repo.varscript.ru-snapshots</name>
+            <url>https://repo.varscript.ru/snapshots</url>
         </repository>
     </repositories>
 

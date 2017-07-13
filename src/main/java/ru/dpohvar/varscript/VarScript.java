@@ -41,8 +41,7 @@ public class VarScript extends JavaPlugin {
         ivy = BootHelper.prepareIvy();
         BootHelper.loadSelfDependencies();
         BootHelper.configureGrape();
-        BootHelper.checkPlugins();
-        // BootHelper.loadExtensions(pluginClassLoader); // automatically
+        BootHelper.loadAllPluginsIvyDependencies();
     }
 
     public boolean isDebug(){

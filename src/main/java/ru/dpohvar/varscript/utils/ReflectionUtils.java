@@ -11,17 +11,17 @@ import java.util.*;
 
 public class ReflectionUtils {
 
-    /** boolean value, TRUE if server uses forge or MCPC+ */
+    /* boolean value, TRUE if server uses forge or MCPC+ */
     private static boolean forge = false;
-    /** class loader, needed for MCPC+ */
+    /* class loader, needed for MCPC+ */
     private static ClassLoader classLoader = Bukkit.getServer().getClass().getClassLoader();
-    /** classLoader in class names */
+    /* classLoader in class names */
     private static HashMap<String,String> replacements = new HashMap<String,String>();
 
     private static String nmsVersionSuffix = null;
     private static String cbVersionSuffix = null;
 
-    /** check server version and class names */
+    /* check server version and class names */
     static {
         addReplacement("cb","org.bukkit.craftbukkit");
         addReplacement("nm","net.minecraft");

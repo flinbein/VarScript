@@ -15,15 +15,19 @@ import:
 - scan-package: org.bukkit.block
 - scan-package: org.bukkit.command
 - scan-package: org.bukkit.entity
+- scan-package: org.bukkit.entity.minecart
 - scan-package: org.bukkit.event
   recursive: true
   mask: .*Event
 - scan-package: org.bukkit.inventory
+  recursive: true
 - scan-package: org.bukkit.map
 - scan-package: org.bukkit.projectiles
 - scan-package: org.bukkit.scoreboard
+- scan-package: org.bukkit.potion
 - class: org.bukkit.util.Vector
 - class: org.bukkit.util.BlockVector
+- class: org.bukkit.util.EulerAngle
 - class: org.bukkit.event.EventPriority
 - class: org.bukkit.util.EulerAngle
 - class: org.bukkit.material.MaterialData

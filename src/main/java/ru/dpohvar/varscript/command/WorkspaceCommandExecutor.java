@@ -275,6 +275,9 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
     }
 
     private boolean onCommandGitClone(Caller caller, String url, String folderName) {
+        if (url.matches("[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}/[^/]+")) { // short github repo pattern
+            url = "https://github.com/" +  url + ".git";
+        }
         WorkspaceService service = plugin.getWorkspaceService();
         String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
         if (folderName == null) try {
@@ -299,7 +302,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
     public void onCommandGitCloneDone(Caller caller, String callerWorkspaceName, Git result, String folderName){
         Ref master;
         try {
-            master = result.getRepository().getRef("origin/master");
+            master = result.getRepository().findRef("origin/master");
         } catch (IOException e) {
             caller.sendThrowable(e,callerWorkspaceName);
             return;

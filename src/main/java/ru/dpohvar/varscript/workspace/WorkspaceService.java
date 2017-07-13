@@ -19,6 +19,7 @@ import ru.dpohvar.varscript.utils.FileTime;
 
 import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
 
 public class WorkspaceService extends GroovyObjectSupport {
 
@@ -106,7 +107,10 @@ public class WorkspaceService extends GroovyObjectSupport {
                     Class clazz = libLoader.loadClass(aClass);
                     importTabCompleteClasses.put(alias, clazz);
                     importCustomizer.addImport(alias, aClass);
-                } catch (ClassNotFoundException ignored) {}
+                } catch (ClassNotFoundException exception) {
+                    String message = "<config> import class not found: " + aClass;
+                    varscript.getLogger().log(Level.WARNING, message);
+                }
             }
             Object packageValue = anImport.get("package");
             String aPackage = packageValue != null ? packageValue.toString() : null;

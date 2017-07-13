@@ -30,9 +30,9 @@ import java.util.logging.Level;
 
 public class BootHelper {
 
-    static Ivy ivy;
+    private static Ivy ivy;
 
-    static Method addURL, getURLs;
+    private static Method addURL, getURLs;
     static {
         try {
             addURL = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
@@ -87,15 +87,17 @@ public class BootHelper {
     private static YamlConfiguration localConfig; // on inner local config resource
     private static YamlConfiguration fileConfig; // on config file
 
-    private static void checkConfig(){
+    private static void loadConfigs(){
         if (localConfig == null) {
             // try to read local config resource
             InputStream resourceStream = null;
             try {
                 resourceStream = VarScript.class.getClassLoader().getResourceAsStream("config.yml");
+                if (resourceStream == null) throw new RuntimeException("Can not access to local resource1 config.yml");
                 localConfig = new YamlConfiguration();
                 localConfig.load(new InputStreamReader(resourceStream,"UTF8"));
             } catch (Exception e) {
+                localConfig = null;
                 throw new RuntimeException(e);
             } finally {
                 if (resourceStream != null) try {
@@ -116,13 +118,13 @@ public class BootHelper {
     }
 
     private static String getConfigString(String path, String defValue){
-        checkConfig();
+        loadConfigs();
         String value = fileConfig.getString(path);
         return value != null ? value : localConfig.getString(path, defValue);
     }
 
     private static int getConfigInt(String path, int defValue){
-        checkConfig();
+        loadConfigs();
         Object value = fileConfig.get(path);
         return value != null ? NumberConversions.toInt(value) : localConfig.getInt(path, defValue);
     }
@@ -237,7 +239,7 @@ public class BootHelper {
      * @param urlStr target URL
      * @param targetFile target file
      */
-    static void downloadIvyJar(String urlStr, File targetFile){
+    private static void downloadIvyJar(String urlStr, File targetFile){
         InputStream input = null;
         FileOutputStream fos = null;
         try {
@@ -296,7 +298,7 @@ public class BootHelper {
      * @param bufferSize buffer size
      * @throws IOException on any IO error
      */
-    static void pipe(InputStream input, OutputStream output, int bufferSize) throws IOException {
+    private static void pipe(InputStream input, OutputStream output, int bufferSize) throws IOException {
         byte[] buffer = new byte[bufferSize];
         int len;
         while (true) {
@@ -306,21 +308,21 @@ public class BootHelper {
         }
     }
 
-    static Yaml yaml = new Yaml();
+    private static Yaml yaml = new Yaml();
 
     /**
      * Check all plugins for ivy dependencies
      */
-    public static void checkPlugins(){
+    public static void loadAllPluginsIvyDependencies(){
         for (File file : getAllPluginsFiles()) {
-            checkPlugin(file);
+            loadPluginIvyDependencies(file);
         }
     }
 
     /**
      * Get all jar files in plugins folder
      */
-    static List<File> getAllPluginsFiles(){
+    private static List<File> getAllPluginsFiles(){
         List<File> result = new ArrayList<File>();
         File[] plFiles = new File("plugins").listFiles();
         if (plFiles != null) for (File file : plFiles) {
@@ -336,15 +338,15 @@ public class BootHelper {
      *
      * @param pluginFile plugin file
      */
-    static void checkPlugin(File pluginFile){
-        URL pluginYmlResource = getResourceURL(pluginFile, "plugin.yml");
-        Map pluginYml = readYaml(pluginYmlResource);
-        if (!isDependOnThisPlugin(pluginYml)) return;
-        String pluginName = (String) pluginYml.get("name");
-        File pluginFolder = new File(VarScript.pluginsFolder, pluginName);
-        File ivyXmlFile = new File(pluginFolder, "ivy.xml");
+    private static void loadPluginIvyDependencies(File pluginFile){
 
         try {
+            URL pluginYmlResource = getResourceURL(pluginFile, "plugin.yml");
+            Map pluginYml = readYaml(pluginYmlResource);
+            if (!isDependOnThisPlugin(pluginYml)) return;
+            String pluginName = (String) pluginYml.get("name");
+            File pluginFolder = new File(VarScript.pluginsFolder, pluginName);
+            File ivyXmlFile = new File(pluginFolder, "ivy.xml");
             ResolveReport report;
             if (ivyXmlFile.isFile()) {
                 report = resolveIvy(ivyXmlFile);
@@ -353,8 +355,9 @@ public class BootHelper {
                 report = resolveIvy(ivyXmlResource);
             }
             loadReportedArtifacts(report, pluginName);
-        } catch (Exception e){
-            Bukkit.getLogger().log(Level.WARNING, VarScript.pluginName+": can not load dependencies of "+pluginName);
+        } catch (Exception exception){
+            String msg = VarScript.pluginName + ": can not load dependencies of plugin " + pluginFile.getName();
+            Bukkit.getLogger().log(Level.WARNING, msg, exception);
         }
     }
 
@@ -364,7 +367,7 @@ public class BootHelper {
      * @param report ivy report
      * @param pluginName name of plugin
      */
-    public static void loadReportedArtifacts(ResolveReport report, String pluginName){
+    private static void loadReportedArtifacts(ResolveReport report, String pluginName){
         VarScriptClassLoader libLoader = VarScript.libLoader;
         if (report.hasError()){
             List problems = report.getAllProblemMessages();
@@ -383,7 +386,7 @@ public class BootHelper {
      * @param resource resource path
      * @return URL
      */
-    static URL getResourceURL(File file, String resource) {
+    private static URL getResourceURL(File file, String resource) {
         try { return new URL("jar:file:"+file+"!/"+resource);}
         catch (MalformedURLException e) {return null;}
     }
@@ -394,7 +397,7 @@ public class BootHelper {
      * @param url url
      * @return parsed map
      */
-    static Map readYaml(URL url){
+    private static Map readYaml(URL url){
         InputStream is = null;
         try{
             is = url.openStream();
@@ -416,7 +419,7 @@ public class BootHelper {
      * @param file file
      * @return parsed map
      */
-    static Map readYaml(File file){
+    private static Map readYaml(File file){
         InputStream is = null;
         try{
             is = new FileInputStream(file);
@@ -439,7 +442,7 @@ public class BootHelper {
      * @param pluginYml parsed yaml config
      * @return boolean
      */
-    static boolean isDependOnThisPlugin(Map pluginYml) {
+    private static boolean isDependOnThisPlugin(Map pluginYml) {
         Object depend = pluginYml.get("depend");
         Object softDepend = pluginYml.get("softdepend");
         return depend instanceof List && ((List) depend).contains(VarScript.pluginName) ||
@@ -455,7 +458,7 @@ public class BootHelper {
      * @throws IOException
      * @throws ParseException
      */
-    static ResolveReport resolveIvy(URL ivySource) throws IOException, ParseException {
+    private static ResolveReport resolveIvy(URL ivySource) throws IOException, ParseException {
         ResolveOptions resolveOptions = new ResolveOptions()
                 .setConfs(new String[]{"default"})
                 .setOutputReport(false)
@@ -471,7 +474,7 @@ public class BootHelper {
      * @throws IOException
      * @throws ParseException
      */
-    static ResolveReport resolveIvy(File ivySource) throws IOException, ParseException {
+    private static ResolveReport resolveIvy(File ivySource) throws IOException, ParseException {
         ResolveOptions resolveOptions = new ResolveOptions()
                 .setConfs(new String[]{"default"})
                 .setOutputReport(false)
@@ -488,7 +491,7 @@ public class BootHelper {
      * @throws IOException
      * @throws ParseException
      */
-    public static ResolveReport resolveIvy(ModuleRevisionId mrId, String conf) throws IOException, ParseException {
+    private static ResolveReport resolveIvy(ModuleRevisionId mrId, String conf) throws IOException, ParseException {
         ResolveOptions resolveOptions = new ResolveOptions()
                 .setConfs(new String[]{conf})
                 .setOutputReport(false)
@@ -544,7 +547,7 @@ public class BootHelper {
                 String className = name.replace('/','.');
                 names.add(className);
             }
-        } catch (IOException ignored) {};
+        } catch (IOException ignored) {}
         return names;
     }
 
