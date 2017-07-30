@@ -107,13 +107,13 @@ public class GitExecutor<T> extends CredentialsProvider implements Runnable, Pro
         lastSendMessageTime = time;
         int percent = progress*100/size;
         String message = ChatColor.AQUA + job + ChatColor.GRAY+" [" + percent + "%]";
-        scheduler.runTask(plugin,new MessageSender(caller,message, callerWorkspaceName,0));
+        scheduler.runTask(plugin,new MessageSender(caller, message, callerWorkspaceName,0));
     }
 
     @Override
     public void beginTask(String job, int size) {
         String message = "starting "+ChatColor.AQUA + job;
-        scheduler.runTask(plugin,new MessageSender(caller,message, callerWorkspaceName,0));
+        scheduler.runTask(plugin,new MessageSender(caller, message, callerWorkspaceName,0));
         this.job = job;
         if (size < 1) size = 1;
         this.size = size;
@@ -162,7 +162,7 @@ public class GitExecutor<T> extends CredentialsProvider implements Runnable, Pro
         for (CredentialItem credentialItem : credentialItems) {
             String message = ChatColor.GOLD + ">>> " + ChatColor.RESET + credentialItem.getPromptText();
             if (credentialItem instanceof CredentialItem.InformationalMessage){
-                scheduler.runTask(plugin,new MessageSender(caller,message, callerWorkspaceName,0));
+                scheduler.runTask(plugin,new MessageSender(caller, message, callerWorkspaceName,0));
                 continue;
             }
             boolean wrongInput = false;
