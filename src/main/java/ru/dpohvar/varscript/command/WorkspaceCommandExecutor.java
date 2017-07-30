@@ -7,12 +7,11 @@ import org.bukkit.command.CommandSender;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.PersonIdent;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.TagOpt;
 import org.eclipse.jgit.transport.URIish;
 import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
@@ -33,7 +32,8 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
             "\n&e/ws git branch &7[&eremote&7|&eall&7]&r" +
             "\n&e/ws git tag &7[&6<pattern>&7]&r" +
             "\n&e/ws git log &7[&6<ref>&7]&r" +
-            "\n&e/ws git checkout &6<branch>&7|&6<commit>&r" +
+            "\n&e/ws git checkout &6<branch&7|&6commit&7|&6tag> &7[&eforce&7]&r" +
+            "\n&e/ws git pull &7[&6<remote> &7[&6<branch>&7]]&r" +
             "\n&e/ws git fetch &6<remote>&r" +
             "\n&e/ws git delete-files &7[&6<name>&7]&r"
     );
@@ -104,7 +104,16 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
                 return true;
             }
 
-            if (strings.length == 3 && strings[1].equals("checkout")) return onCommandGitCheckout(caller, workspaceName, git, strings[2]);
+            if (strings[1].equals("checkout") && strings.length >= 3 && strings.length <= 4) {
+                if (strings.length == 3) return onCommandGitCheckout(caller, workspaceName, git, strings[2], false);
+                if (strings.length == 4 && strings[3].equals("force")) return onCommandGitCheckout(caller, workspaceName, git, strings[2], true);
+            }
+
+            if (strings[1].equals("pull") && strings.length >= 2 && strings.length <= 4) {
+                if (strings.length == 2) return onCommandGitPull(caller, workspaceName, git, null, null);
+                if (strings.length == 3) return onCommandGitPull(caller, workspaceName, git, strings[2], null);
+                if (strings.length == 4) return onCommandGitPull(caller, workspaceName, git, strings[2], strings[3]);
+            }
 
             if (strings.length == 2 && strings[1].equals("branch")) return onCommandGitBranch(caller, workspaceName, git, null);
             if (strings.length == 3 && strings[1].equals("branch")) return onCommandGitBranch(caller, workspaceName, git, strings[2]);
@@ -169,8 +178,9 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
     private boolean onCommandGitFetch(Caller caller, String workspaceName, Git git, String remote) {
         GitExecutor<FetchResult> executor = new GitExecutor<FetchResult>(caller, workspaceName, new GitFetchHandler());
         FetchCommand command = git.fetch()
-                .setRemote(remote)
+                .setRemote(remote != null ? remote : "origin")
                 .setProgressMonitor(executor)
+                .setTagOpt(TagOpt.FETCH_TAGS)
                 .setCredentialsProvider(executor);
         executor.setCommand(command);
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin,executor);
@@ -208,14 +218,45 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
                 } else {
                     builder.append("  ");
                 }
-                if (name.startsWith("refs/remotes/")) name = ChatColor.RED + name.substring(13);
-                if (name.startsWith("refs/heads/")) name = ChatColor.GREEN + name.substring(11);
-                builder.append(name)
+                boolean remoteBranch = name.startsWith("refs/remotes/");
+                boolean localBranch = name.startsWith("refs/heads/");
+                String shortName;
+                if (remoteBranch) {
+                    shortName = name.substring(13);
+                } else if (localBranch) {
+                    shortName = name.substring(11);
+                } else {
+                    shortName = name;
+                }
+
+                builder.append(remoteBranch ? ChatColor.RED : localBranch ? ChatColor.GREEN : ChatColor.LIGHT_PURPLE);
+                builder.append(shortName);
+                builder
                         .append(ChatColor.RESET)
                         .append(" - ")
                         .append(ChatColor.AQUA)
-                        .append(objectId.getName().substring(0,7))
-                        .append(ChatColor.RESET);
+                        .append(objectId.getName().substring(0,7));
+
+                printMergeRef: if (localBranch) {
+                    StoredConfig config = repository.getConfig();
+                    BranchConfig branchConfig = new BranchConfig(config, shortName);
+                    String configRemoteValue = branchConfig.getRemote();
+                    if (configRemoteValue == null) break printMergeRef;
+                    String configMergeValue = branchConfig.getMerge();
+                    if (configMergeValue == null) break printMergeRef;
+                    if (!configMergeValue.startsWith("refs/heads/")) break printMergeRef;
+                    builder
+                            .append(ChatColor.RESET)
+                            .append(" [")
+                            .append(ChatColor.BLUE)
+                            .append(configRemoteValue)
+                            .append('/')
+                            .append(configMergeValue.substring(11))
+                            .append(ChatColor.RESET)
+                            .append("]");
+                }
+
+                builder.append(ChatColor.RESET);
             }
         } catch (Exception e) {
             caller.sendThrowable(e,workspaceName);
@@ -225,6 +266,7 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         }
         caller.sendMessage(builder,workspaceName);
         return true;
+
     }
 
     private boolean onCommandGitTag(Caller caller, String workspaceName, Git git, String pattern){
@@ -260,22 +302,106 @@ public class WorkspaceCommandExecutor implements CommandExecutor{
         return true;
     }
 
-    private boolean onCommandGitCheckout(Caller caller, String workspaceName, Git git, String branch) {
+    private boolean onCommandGitCheckout(Caller caller, String workspaceName, Git git, String branch, boolean force) {
         try {
-            git.checkout().setName(branch).call();
-            String fullBranch = git.getRepository().getFullBranch();
-            caller.sendMessage("switched to "+ChatColor.AQUA+fullBranch,workspaceName);
+
+            Ref localRef = git.getRepository().exactRef("refs/heads/" + branch);
+            if (localRef != null) {
+                Ref targetRef = git.checkout()
+                        .setName(branch)
+                        .setForce(force)
+                        .setCreateBranch(false)
+                        .setStage(CheckoutCommand.Stage.THEIRS)
+                        .call();
+                caller.sendMessage("switched to "+ChatColor.GREEN+targetRef.getName(),workspaceName);
+                return true;
+            }
+
+            Ref remoteRef = git.getRepository().exactRef("refs/remotes/" + branch);
+            Ref remoteOriginRef = git.getRepository().exactRef("refs/remotes/origin/" + branch);
+
+            if (remoteRef == null && remoteOriginRef != null) {
+                Ref targetRef = git.checkout()
+                        .setName(branch)
+                        .setForce(force)
+                        .setCreateBranch(true)
+                        .setStartPoint("refs/remotes/origin/" + branch)
+                        .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.SET_UPSTREAM)
+                        .call();
+                StringBuilder stringMessage = new StringBuilder()
+                        .append("switched to a new branch ")
+                        .append(ChatColor.GREEN)
+                        .append(targetRef.getName())
+                        .append(ChatColor.RESET)
+                        .append(" from ")
+                        .append(ChatColor.AQUA)
+                        .append(remoteOriginRef.getName());
+                caller.sendMessage(stringMessage, workspaceName);
+                return true;
+            }
+
+            Ref resolvedRef = git.getRepository().exactRef(branch);
+            if (resolvedRef != null || remoteRef != null) {
+                Ref checkoutRef = resolvedRef != null ? resolvedRef : remoteRef;
+                Ref targetRef = git.checkout()
+                        .setName(branch)
+                        .setForce(force)
+                        .setCreateBranch(false)
+                        .setStage(CheckoutCommand.Stage.THEIRS)
+                        .call();
+                StringBuilder stringMessage = new StringBuilder();
+                if (targetRef == null)  {
+                    String commitId = checkoutRef.getObjectId().getName();
+                    stringMessage
+                            .append("detached HEAD at ")
+                            .append(ChatColor.AQUA)
+                            .append(commitId.substring(0, 7));
+                } else {
+                    stringMessage
+                            .append("switched ")
+                            .append(ChatColor.GREEN)
+                            .append(targetRef.getName());
+                }
+                caller.sendMessage(stringMessage, workspaceName);
+                return true;
+            }
+
+            return true;
         } catch (Exception e) {
             caller.sendErrorMessage(e.getMessage(),workspaceName);
             return true;
         } finally {
             git.close();
         }
-        return true;
+    }
+
+    private boolean onCommandGitPull(Caller caller, String workspaceName, Git git, String remote, String branch) {
+        try {
+            WorkspaceService service = plugin.getWorkspaceService();
+            String callerWorkspaceName = service.getWorkspaceName(caller.getSender());
+            GitExecutor<PullResult> executor = new GitExecutor<PullResult>(caller, callerWorkspaceName, new GitPullHandler());
+            PullCommand pullCommand = git.pull()
+                    .setStrategy(MergeStrategy.THEIRS)
+                    .setRebase(BranchConfig.BranchRebaseMode.NONE)
+                    .setTagOpt(TagOpt.FETCH_TAGS)
+                    .setProgressMonitor(executor);
+            if (remote != null) pullCommand = pullCommand.setRemote(remote);
+            if (branch != null) pullCommand = pullCommand.setRemoteBranchName(branch);
+            executor.setCommand(pullCommand);
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin,executor);
+            return true;
+        } catch (Exception e) {
+            caller.sendErrorMessage(e.getMessage(),workspaceName);
+            return true;
+        } finally {
+            git.close();
+        }
     }
 
     private boolean onCommandGitClone(Caller caller, String url, String folderName) {
-        if (url.matches("[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}/[^/]+")) { // short github repo pattern
+        if (url.matches("[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}/[^/]+\\.git")) { // short github repo pattern
+            url = "https://github.com/" +  url;
+        } else if (url.matches("[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38}/[^/]+")) { // short github repo pattern
             url = "https://github.com/" +  url + ".git";
         }
         WorkspaceService service = plugin.getWorkspaceService();
