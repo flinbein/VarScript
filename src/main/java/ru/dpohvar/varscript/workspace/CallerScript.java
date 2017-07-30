@@ -83,10 +83,7 @@ public abstract class CallerScript extends Script implements ScriptProperties {
         return workspace.getWorkspaceService();
     }
 
-    @Override
-    public void println() {
-        println("");
-    }
+
 
     @Override
     public void print(Object value) {
@@ -103,11 +100,27 @@ public abstract class CallerScript extends Script implements ScriptProperties {
         if (flushBukkitTask == null) flushBukkitTask = scheduler.runTask(plugin, new FlushTask(this));
     }
 
+    public void print(Object... values){
+        for (int i = 0; i < values.length; i++) {
+            print(values[i]);
+            if (i < values.length - 1) print(" ");
+        }
+    }
+
+    @Override
+    public void println() {
+        println("\n");
+    }
+
     @Override
     public void println(Object value) {
-        String val = DefaultGroovyMethods.toString(value);
-        if (printCache.length() > 0) val = printCache.toString() + val;
-        caller.sendPrintMessage(val, workspace.getName());
+        print(value);
+        print('\n');
+    }
+
+    public void println(Object... values) {
+        print(values);
+        print('\n');
     }
 
     @Override
