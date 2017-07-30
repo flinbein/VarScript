@@ -93,7 +93,7 @@ public class BootHelper {
             InputStream resourceStream = null;
             try {
                 resourceStream = VarScript.class.getClassLoader().getResourceAsStream("config.yml");
-                if (resourceStream == null) throw new RuntimeException("Can not access to local resource1 config.yml");
+                if (resourceStream == null) throw new RuntimeException("Can not access to local resource config.yml");
                 localConfig = new YamlConfiguration();
                 localConfig.load(new InputStreamReader(resourceStream,"UTF8"));
             } catch (Exception e) {
