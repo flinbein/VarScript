@@ -469,11 +469,22 @@ public class Workspace extends GroovyObjectSupport implements TriggerGenerator {
         binding.getVariables().remove(variable);
     }
 
-    @Override
+    @SuppressWarnings("Duplicates") @Override
     public Object invokeMethod(String name, Object args) {
         Object[] arguments;
         if (args instanceof Object[]) arguments = (Object[]) args;
         else arguments = new Object[]{args};
+
+        runPickMethod: try {
+            Class[] classes = new Class[arguments.length];
+            for (int i = 0; i < arguments.length; i++) {
+                classes[i] = arguments[i].getClass();
+            }
+            MetaMethod metaMethod = getMetaClass().pickMethod(name, classes);
+            if (metaMethod == null) metaMethod = InvokerHelper.getMetaClass(this.getClass()).pickMethod(name, classes);
+            if (metaMethod == null) break runPickMethod;
+            return metaMethod.doMethodInvoke(this, arguments);
+        } catch (MissingMethodException ignored){}
 
         try {
             return getMetaClass().invokeMethod(this, name, args);
