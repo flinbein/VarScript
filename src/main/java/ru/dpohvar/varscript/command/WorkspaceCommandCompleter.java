@@ -17,10 +17,7 @@ import ru.dpohvar.varscript.workspace.WorkspaceService;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class WorkspaceCommandCompleter implements TabCompleter {
 
@@ -104,7 +101,7 @@ public class WorkspaceCommandCompleter implements TabCompleter {
         return null;
     }
 
-    private static final List<String> gitCommands = Arrays.asList("clone", "checkout", "branch", "tag", "log", "fetch", "delete");
+    private static final List<String> gitCommands = Arrays.asList("clone", "checkout", "branch", "tag", "log", "fetch", "delete", "pull");
     private List<String> completeGit(CommandSender commandSender, String[] strings) {
         String gitCommand = strings[1];
 
@@ -193,10 +190,23 @@ public class WorkspaceCommandCompleter implements TabCompleter {
                     refs.addAll(tags);
                     for (Ref ref : refs) {
                         String name = ref.getName();
-                        if (name.startsWith("refs/remotes/")) name = name.substring(13);
-                        if (name.startsWith("refs/heads/")) name = name.substring(11);
-                        if (name.startsWith("refs/tags/")) name = name.substring(10);
-                        if (name.startsWith(repo) && !result.contains(name)) result.add(name);
+                        if (name.startsWith("refs/remotes/")) {
+                            name = name.substring(13);
+                            if (name.startsWith(repo) && !result.contains(name)) result.add(name);
+                            if (name.startsWith("origin/") && name.length() > 7) {
+                                name = name.substring(7);
+                                if (name.startsWith(repo) && !result.contains(name)) result.add(name);
+                            }
+
+                        }
+                        if (name.startsWith("refs/heads/")) {
+                            name = name.substring(11);
+                            if (name.startsWith(repo) && !result.contains(name)) result.add(name);
+                        }
+                        if (name.startsWith("refs/tags/")) {
+                            name = name.substring(10);
+                            if (name.startsWith(repo) && !result.contains(name)) result.add(name);
+                        }
                     }
                     return result;
                 } catch (Exception e) {
@@ -226,6 +236,51 @@ public class WorkspaceCommandCompleter implements TabCompleter {
                         String name = tag.getName();
                         if (name.startsWith("refs/tags/")) name = name.substring(10);
                         if (name.startsWith(tagName) && !result.contains(name)) result.add(name);
+                    }
+                    return result;
+                } catch (Exception e) {
+                    caller.sendThrowable(e,serviceName);
+                    return null;
+                } finally {
+                    if (git != null) git.close();
+                }
+            }
+        }
+
+        if (gitCommand.equals("pull")) {
+            String remotePrefixName = strings[2];
+            File gitDir = new File(service.getServiceDirectory(),serviceName+"/.git");
+            if (!gitDir.isDirectory()) {
+                caller.sendErrorMessage("No git here",serviceName);
+                return null;
+            }
+            if (strings.length == 3) {
+                Git git = null;
+                try {
+                    git = new Git(new FileRepository(gitDir));
+                    Set<String> remoteNames = git.getRepository().getRemoteNames();
+                    List<String> result = new ArrayList<String>();
+                    for (String name : remoteNames) {
+                        if (name.startsWith(remotePrefixName) && !result.contains(name)) result.add(name);
+                    }
+                    return result;
+                } catch (Exception e) {
+                    caller.sendThrowable(e,serviceName);
+                    return null;
+                } finally {
+                    if (git != null) git.close();
+                }
+            } if (strings.length == 4) {
+                Git git = null;
+                try {
+                    git = new Git(new FileRepository(gitDir));
+                    String branchPrefixName = strings[3];
+                    List<Ref> branches = git.branchList().call();
+                    List<String> result = new ArrayList<String>();
+                    for (Ref branch : branches) {
+                        String name = branch.getName();
+                        if (name.startsWith("refs/heads/")) name = name.substring(11);
+                        if (name.startsWith(branchPrefixName) && !result.contains(name)) result.add(name);
                     }
                     return result;
                 } catch (Exception e) {
