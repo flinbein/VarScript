@@ -31,7 +31,7 @@
     </developers>
 
     <groupId>ru.dpohvar.varscript</groupId>
-    <artifactId>VarScript</artifactId>
+    <artifactId>varscript</artifactId>
     <version>1.4</version>
     <packaging>jar</packaging>
 
