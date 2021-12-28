@@ -263,7 +263,7 @@ public class GroovyCommandCompleter implements TabCompleter {
                 }
             }
         }
-        return new ArrayList<String>(result);
+        return new ArrayList<>(result);
     }
 
     public void getHelp(Caller caller, Workspace workspace, LinkedList<String> tokens){

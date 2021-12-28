@@ -1,8 +1,0 @@
-<ivy-module version="2.0">
-    <info organisation="ru.dpohvar.varscript" module="VarScript"/>
-    <dependencies>
-        <dependency conf="default" org="org.codehaus.groovy" name="groovy-all" rev="${groovy-version}"/>
-        <dependency conf="default" org="org.eclipse.jgit" name="org.eclipse.jgit" rev="${jgit-version}"/>
-
-    </dependencies>
-</ivy-module>

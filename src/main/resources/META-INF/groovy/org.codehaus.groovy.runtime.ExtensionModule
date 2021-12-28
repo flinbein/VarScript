@@ -16,7 +16,6 @@ extensionClasses=\
   ru.dpohvar.varscript.extension.MaterialExt,\
   ru.dpohvar.varscript.extension.ObjectExt,\
   ru.dpohvar.varscript.extension.PlayerExt,\
-  ru.dpohvar.varscript.extension.PowerNBTExt,\
   ru.dpohvar.varscript.extension.VectorExt,\
   ru.dpohvar.varscript.extension.WorkspaceExt,\
   ru.dpohvar.varscript.extension.WorldExt

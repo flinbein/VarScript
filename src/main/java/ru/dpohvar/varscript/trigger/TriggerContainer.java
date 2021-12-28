@@ -14,7 +14,7 @@ import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.util.*;
 
-public class TriggerContainer implements Trigger, TriggerGenerator {
+public class TriggerContainer implements MetaTriggerGenerator {
 
     private boolean disabled;
     private final Workspace workspace;

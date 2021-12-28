@@ -39,6 +39,7 @@ public class BukkitEventTrigger<T extends Event> implements Trigger, Listener, E
             registeredListener = new RegisteredListener(this, this, priority, plugin, ignoreCancelled);
         }
         handlerList.register(registeredListener);
+        HandlerList.bakeAll();
         parentTriggers.add(this);
     }
 

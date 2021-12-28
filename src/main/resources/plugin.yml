@@ -1,16 +1,25 @@
 name: ${project.artifactId}
 version: ${project.version}
 description: ${plugin-description}
+api-version: ${spigot-api-version}
 author: ${plugin-author}
 database: false
 main: ru.dpohvar.varscript.VarScript
-softdepend: [PowerNBT]
+
+libraries:
+- org.codehaus.groovy:groovy-all:jar:groovydoc:${groovy-version}
+- org.eclipse.jgit:org.eclipse.jgit:${jgit-version}
 
 commands:
   script:
     description: run line
     aliases: ['>', g>]
     usage: /> {groovy script ...} | scriptName [arg1[,arg2 ...[,argN]]]
+    permission: varscript.run
+  script:kotlin:
+    description: run line
+    aliases: [kt>]
+    usage: /> {kotlin script ...} | scriptName [arg1[,arg2 ...[,argN]]]
     permission: varscript.run
   workspace:
     description: manage workspaces

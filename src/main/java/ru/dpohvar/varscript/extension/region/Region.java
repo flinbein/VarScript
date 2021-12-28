@@ -76,8 +76,8 @@ public abstract class Region implements Cloneable, Iterable<Block> {
 
     @Deprecated
     @SuppressWarnings("deprecation")
-    public List<Block> blocks(int type){
-        return blocks(Material.getMaterial(type));
+    public List<Block> blocks(String type){
+        return blocks(Material.matchMaterial(type));
     }
 
     public List<Entity> getEntities(){

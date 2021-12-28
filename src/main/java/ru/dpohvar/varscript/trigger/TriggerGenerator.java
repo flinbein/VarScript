@@ -38,7 +38,7 @@ public interface TriggerGenerator {
 
     public BukkitEventTrigger listen(EventPriority priority, Closure closure);
 
-    public TriggerGenerator generator();
+    public MetaTriggerGenerator generator();
 
     public BukkitTimeoutTrigger timeout(long timeout, boolean sync);
 

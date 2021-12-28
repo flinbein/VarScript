@@ -1,10 +1,9 @@
 package ru.dpohvar.varscript.extension;
 
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -32,7 +31,7 @@ public class BlockExt {
     }
 
     public static Block getBl(Block self){
-        return getLoc(self).getBlock();
+        return self;
     }
 
     public static float getPitch(Block self){
@@ -75,17 +74,26 @@ public class BlockExt {
         return Arrays.asList(inv.getContents());
     }
 
+    public static Inventory getInv(Block self){
+        var state = self.getState();
+        return state instanceof InventoryHolder ? ((InventoryHolder) state).getInventory(): null;
+    }
+
     // setters
 
-    public static void setBl(Block self, int id){
-        getBl(self).setTypeId(id);
+    public static void setBl(Block self, String data){
+        setBl(self, Bukkit.createBlockData(data));
     }
 
-    public static void setBl(Block self, Material id){
-        getBl(self).setType(id);
+    public static void setBl(Block self, BlockData data){
+        self.setBlockData(data);
     }
 
-    public static void setBlock(Block self, int id){
+    public static void setBl(Block self, Material material){
+        setBl(self, Bukkit.createBlockData(material));
+    }
+
+    public static void setBlock(Block self, String id){
         setBl(self, id);
     }
 
@@ -93,20 +101,8 @@ public class BlockExt {
         setBl(self, id);
     }
 
-    public static void bl(Block self, Material id, int data){
-        getBl(self).setTypeIdAndData(id.getId(), (byte)data, false);
-    }
-
-    public static void bl(Block self, int id, int data){
-        getBl(self).setTypeIdAndData(id, (byte)data, false);
-    }
-
-    public static void block(Block self, Material id, int data){
-        bl(self, id, data);
-    }
-
-    public static void block(Block self, int id, int data){
-        bl(self, id, data);
+    public static void setBlock(Block self, BlockData data){
+        setBl(self, data);
     }
 
     public static void setItems(Block self, List<ItemStack> items){
@@ -185,12 +181,12 @@ public class BlockExt {
     // spawn
 
     public static <T extends Entity> T spawn(Block self, Class<T> type){
-        Location loc = getLoc(self);
+        Location loc = getLoc(self).add(0.5, 0.5, 0.5);
         return loc.getWorld().spawn(loc, type);
     }
 
     public static Item spawn(Block self, ItemStack itemStack){
-        Location loc = getLoc(self);
+        Location loc = getLoc(self).add(0.5, 0.5, 0.5);
         return loc.getWorld().dropItem(loc, itemStack);
     }
 
@@ -203,9 +199,9 @@ public class BlockExt {
         return spawn(self, material, 0);
     }
 
-    public static FallingBlock spawn(Block self, int type, int data){
+    public static FallingBlock spawn(Block self, BlockData data){
         Location loc = getLoc(self).add(0.5, 0, 0.5);
-        return loc.getWorld().spawnFallingBlock(loc, type, (byte) data);
+        return loc.getWorld().spawnFallingBlock(loc, data);
     }
 
     // effect
@@ -243,6 +239,24 @@ public class BlockExt {
     }
 
     public static Block sound(Block self, Sound sound){
+        Location loc = getLoc(self);
+        loc.getWorld().playSound(loc, sound, 1, 1);
+        return self;
+    }
+
+    public static Block sound(Block self, String sound, double vol, double pitch){
+        Location loc = getLoc(self);
+        loc.getWorld().playSound(loc, sound, (float)vol, (float)pitch);
+        return self;
+    }
+
+    public static Block sound(Block self, String sound, double vol){
+        Location loc = getLoc(self);
+        loc.getWorld().playSound(loc, sound, (float)vol, 1);
+        return self;
+    }
+
+    public static Block sound(Block self, String sound){
         Location loc = getLoc(self);
         loc.getWorld().playSound(loc, sound, 1, 1);
         return self;
@@ -332,31 +346,6 @@ public class BlockExt {
 
     public static Location plus(Block self, Vector val){
         return getLoc(self).add(val);
-    }
-
-    // block-specific
-
-    public static int getId(Block self){
-        return self.getTypeId();
-    }
-
-    public static void setId(Block self, int value){
-        self.setTypeId(value);
-    }
-
-    public static Block set(Block self, int type, int data, boolean physic){
-        self.setTypeIdAndData(type, (byte)data, physic);
-        return self;
-    }
-
-    public static Block set(Block self, int type, int data){
-        self.setTypeIdAndData(type, (byte)data, false);
-        return self;
-    }
-
-    public static Block set(Block self, int type){
-        self.setTypeIdAndData(type, (byte)0, false);
-        return self;
     }
 
 }

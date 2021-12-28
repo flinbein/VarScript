@@ -1,40 +1,58 @@
 package ru.dpohvar.varscript.trigger;
 
 import groovy.lang.Closure;
-import org.bukkit.Server;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.SimpleCommandMap;
+import org.bukkit.plugin.SimplePluginManager;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.workspace.Workspace;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.*;
 
 import static org.bukkit.ChatColor.stripColor;
-import static ru.dpohvar.varscript.utils.ReflectionUtils.*;
-
+import static ru.dpohvar.varscript.utils.ReflectionUtils.RefField;
 import static ru.dpohvar.varscript.utils.ReflectionUtils.getRefClass;
 
 public class CommandTrigger extends Command implements Trigger {
 
     private boolean stopped;
-    private Closure handler;
+    private Closure<?> handler;
     private final Workspace workspace;
     private final Set<Trigger> parentTriggers;
     private final String name;
     private final String fallbackPrefix;
     private List<Integer> argOrder;
     private final SimpleCommandMap commandMap;
+    private static Field commandMapField;
 
-    public CommandTrigger(Workspace workspace, Set<Trigger> parentTriggers, String name, String description, String usage, List<String> aliases){
+    static {
+        try {
+            commandMapField = SimplePluginManager.class.getDeclaredField("commandMap");
+            commandMapField.setAccessible(true);
+        } catch (NoSuchFieldException error) {
+            commandMapField = null;
+        }
+    }
+
+    public CommandTrigger(Workspace workspace, Set<Trigger> parentTriggers, String name, String description, String usage, List<String> aliases) {
         super(name, description, usage, aliases);
+        VarScript varScript = workspace.getWorkspaceService().getVarScript();
+        var server = varScript.getServer();
+        var pluginManager = (SimplePluginManager) server.getPluginManager();
         this.workspace = workspace;
         this.parentTriggers = parentTriggers;
         this.name = name;
-        this.fallbackPrefix = stripColor(workspace.getName()).toLowerCase().trim().replace(' ', '_');
-        Server server = workspace.getWorkspaceService().getVarScript().getServer();
-        this.commandMap = mGetCommandMap.of(server).call();
-        register(commandMap);
+        this.fallbackPrefix = varScript.getName() + ":" + stripColor(workspace.getName()).toLowerCase().trim().replace(' ', '_');
+        try {
+            this.commandMap = (SimpleCommandMap) commandMapField.get(pluginManager);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         commandMap.register(fallbackPrefix, this);
         parentTriggers.add(this);
     }
@@ -59,7 +77,7 @@ public class CommandTrigger extends Command implements Trigger {
                 Object result = handler.call();
                 return DefaultGroovyMethods.asBoolean(result);
             } else {
-                List<Object> passArguments = new ArrayList<Object>();
+                List<Object> passArguments = new ArrayList<>();
                 for (Integer t : argOrder) switch (t) {
                     case 0: passArguments.add(sender); break;
                     case 1: passArguments.add(args); break;
@@ -131,15 +149,10 @@ public class CommandTrigger extends Command implements Trigger {
         this.stopped = true;
         if (parentTriggers != null) parentTriggers.remove(this);
         Map<?,?> knownCommands = fKnownCommands.of(commandMap).get();
-        Iterator<? extends Map.Entry<?, ?>> iterator = knownCommands.entrySet().iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().getValue() == this) iterator.remove();
-        }
+        knownCommands.entrySet().removeIf(entry -> entry.getValue() == this);
         return true;
     }
 
-    static RefClass<?> cCraftServer = getRefClass("{cb}.CraftServer");
-    static RefMethod<SimpleCommandMap> mGetCommandMap = cCraftServer.findMethodByReturnType(SimpleCommandMap.class);
     static RefField<Map> fKnownCommands = getRefClass(SimpleCommandMap.class).findField(Map.class);
 
 

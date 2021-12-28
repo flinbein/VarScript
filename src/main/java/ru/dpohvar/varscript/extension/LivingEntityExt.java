@@ -12,7 +12,7 @@ import java.util.HashSet;
 
 public class LivingEntityExt {
     public static Block getTarb(LivingEntity self) {
-        return self.getTargetBlock( (HashSet<Byte>) null, 128);
+        return self.getTargetBlock(null, 128);
     }
 
     public static Location getEye(LivingEntity self) {
@@ -68,7 +68,11 @@ public class LivingEntityExt {
     }
 
     public static ItemStack getHand(LivingEntity self) {
-        return self.getEquipment().getItemInHand();
+        return self.getEquipment().getItemInMainHand();
+    }
+
+    public static ItemStack getOffHand(LivingEntity self) {
+        return self.getEquipment().getItemInOffHand();
     }
 
     public static ItemStack getArmor(LivingEntity self) {
@@ -92,7 +96,11 @@ public class LivingEntityExt {
     }
 
     public static void setHand(LivingEntity self, ItemStack item) {
-        self.getEquipment().setItemInHand(item);
+        self.getEquipment().setItemInMainHand(item);
+    }
+
+    public static void setOffHand(LivingEntity self, ItemStack item) {
+        self.getEquipment().setItemInOffHand(item);
     }
 
     public static void setArmor(LivingEntity self, ItemStack item) {
@@ -123,27 +131,27 @@ public class LivingEntityExt {
         setArmor(self, new ItemStack(item));
     }
 
-    public static void setBoots(LivingEntity self, int item) {
-        setBoots(self, new ItemStack(item));
+    public static void setBoots(LivingEntity self, String item) {
+        setBoots(self, new ItemStack(Material.matchMaterial(item)));
     }
 
-    public static void setHelmet(LivingEntity self, int item) {
-        setHelmet(self, new ItemStack(item));
+    public static void setHelmet(LivingEntity self, String item) {
+        setHelmet(self, new ItemStack(Material.matchMaterial(item)));
     }
 
-    public static void setLegs(LivingEntity self, int item) {
-        setLegs(self, new ItemStack(item));
+    public static void setLegs(LivingEntity self, String item) {
+        setLegs(self, new ItemStack(Material.matchMaterial(item)));
     }
 
-    public static void setPants(LivingEntity self, int item) {
-        setLegs(self, new ItemStack(item));
+    public static void setPants(LivingEntity self, String item) {
+        setLegs(self, new ItemStack(Material.matchMaterial(item)));
     }
 
-    public static void setHand(LivingEntity self, int item) {
-        setHand(self, new ItemStack(item));
+    public static void setHand(LivingEntity self, String item) {
+        setHand(self, new ItemStack(Material.matchMaterial(item)));
     }
 
-    public static void setArmor(LivingEntity self, int item) {
-        setArmor(self, new ItemStack(item));
+    public static void setArmor(LivingEntity self, String item) {
+        setArmor(self, new ItemStack(Material.matchMaterial(item)));
     }
 }

@@ -14,6 +14,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.jetbrains.annotations.NotNull;
 import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
 import ru.dpohvar.varscript.extension.completer.EntityIdCompleter;
@@ -130,7 +131,7 @@ public class VarScriptProvider extends GroovyObjectSupport implements VarScriptH
         if (sender instanceof BlockCommandSender) {
             return ((BlockCommandSender) sender).getBlock();
         } else if (sender instanceof LivingEntity) {
-            Block block = ((LivingEntity) sender).getTargetBlock((HashSet<Byte>)null, 128);
+            Block block = ((LivingEntity) sender).getTargetBlock(null, 128);
             if (block != null && !block.isEmpty()) return block;
         }
         throw PropertySelector.next;

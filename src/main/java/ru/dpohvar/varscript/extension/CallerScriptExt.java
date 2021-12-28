@@ -2,6 +2,7 @@ package ru.dpohvar.varscript.extension;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -49,13 +50,21 @@ public class CallerScriptExt {
     }
 
     public static FallingBlock spawn(CallerScript self, Material material){
-        return spawn(self, material, 0);
-    }
-
-    public static FallingBlock spawn(CallerScript self, int type, int data){
         Object me = self.getMe();
         Location loc = (Location) InvokerHelper.getProperty(me, "location");
-        return loc.getWorld().spawnFallingBlock(loc, type, (byte) data);
+        return loc.getWorld().spawnFallingBlock(loc, material.createBlockData());
+    }
+
+    public static FallingBlock spawn(CallerScript self, String data){
+        Object me = self.getMe();
+        Location loc = (Location) InvokerHelper.getProperty(me, "location");
+        return loc.getWorld().spawnFallingBlock(loc, Material.matchMaterial(data).createBlockData());
+    }
+
+    public static FallingBlock spawn(CallerScript self, BlockData data){
+        Object me = self.getMe();
+        Location loc = (Location) InvokerHelper.getProperty(me, "location");
+        return loc.getWorld().spawnFallingBlock(loc, data);
     }
 
     public static void explode(CallerScript self, Location loc, double power){
@@ -108,32 +117,6 @@ public class CallerScriptExt {
             }
         }
         throw new IllegalArgumentException("no entity with id "+id);
-    }
-
-    public static String toJSON (CallerScript self, Object src){
-        return org.json.simple.JSONValue.toJSONString(src);
-    }
-
-    public static Object parseJSON (CallerScript self, CharSequence src){
-        return org.json.simple.JSONValue.parse(src.toString());
-    }
-
-    public static Object parseJSON (CallerScript self, File file) throws FileNotFoundException{
-        InputStream stream = null;
-        try {
-            stream = new FileInputStream(file);
-            Reader reader = new InputStreamReader(stream,"UTF8");
-            return org.json.simple.JSONValue.parse(reader);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 }

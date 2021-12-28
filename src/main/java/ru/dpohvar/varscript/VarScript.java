@@ -1,6 +1,7 @@
 package ru.dpohvar.varscript;
 
-import org.apache.ivy.Ivy;
+import groovy.lang.ExpandoMetaClassCreationHandle;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dpohvar.varscript.boot.BootHelper;
 import ru.dpohvar.varscript.boot.VarScriptClassLoader;
@@ -14,7 +15,6 @@ import ru.dpohvar.varscript.workspace.Workspace;
 import ru.dpohvar.varscript.workspace.WorkspaceService;
 
 import java.io.File;
-import java.net.URLClassLoader;
 import java.util.ServiceLoader;
 
 import static org.bukkit.ChatColor.translateAlternateColorCodes;
@@ -25,7 +25,6 @@ public class VarScript extends JavaPlugin {
     public static final File pluginsFolder;
     public static final File dataFolder;
     public static final VarScriptClassLoader libLoader;
-    public static final Ivy ivy;
 
     public static final String prefix = translateAlternateColorCodes('&',"&2&l[&a%s&2&l]>&r ");
     public static final String printPrefix = translateAlternateColorCodes('&',"&6&l[&e%s&6&l]>&r ");
@@ -35,13 +34,9 @@ public class VarScript extends JavaPlugin {
         pluginName = "VarScript";
         pluginsFolder = new File("plugins");
         dataFolder = new File(pluginsFolder, pluginName);
-        libLoader = new VarScriptClassLoader((URLClassLoader)VarScript.class.getClassLoader());
-        BootHelper.prepareSystemVariables();
-        BootHelper.loadLibraries();
-        ivy = BootHelper.prepareIvy();
-        BootHelper.loadSelfDependencies();
-        BootHelper.configureGrape();
-        BootHelper.loadAllPluginsIvyDependencies();
+        libLoader = new VarScriptClassLoader(VarScript.class.getClassLoader(), Bukkit.getPluginManager());
+        ExpandoMetaClassCreationHandle.enable();
+        BootHelper.loadExtensions(VarScript.class.getClassLoader());
     }
 
     public boolean isDebug(){

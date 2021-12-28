@@ -5,6 +5,7 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import ru.dpohvar.varscript.VarScript;
 import ru.dpohvar.varscript.caller.Caller;
+import ru.dpohvar.varscript.event.CompileScriptEvent;
 import ru.dpohvar.varscript.workspace.CallerScript;
 import ru.dpohvar.varscript.workspace.Workspace;
 
@@ -20,9 +21,19 @@ public class GroovyBufferRunner {
 
     public void compileAsyncAndRun(final List<String> buffer){
         String script = StringUtils.join(buffer, '\n');
+        Caller caller = this.caller;
         Workspace workspace = caller.getCurrentWorkspace();
-        VarScript plugin = caller.getService().getPlugin();
-        BukkitScheduler scheduler = plugin.getServer().getScheduler();
+
+        final VarScript plugin = caller.getService().getPlugin();
+        final BukkitScheduler scheduler = plugin.getServer().getScheduler();
+        final CompileScriptEvent event = new CompileScriptEvent(caller, script, workspace);
+
+        plugin.getServer().getPluginManager().callEvent(event);
+        script = event.getScript();
+        caller = event.getCaller();
+        workspace = event.getWorkspace();
+
+        if (event.isCancelled() || script == null || caller == null || workspace == null) return;
         AsyncCompiler asyncCompiler = new AsyncCompiler(scheduler, plugin, workspace, caller, script);
         scheduler.runTaskAsynchronously(plugin, asyncCompiler);
     }
@@ -31,21 +42,13 @@ public class GroovyBufferRunner {
         return caller;
     }
 
-    private static class AsyncCompiler implements Runnable{
-
-        private final Workspace workspace;
-        private final Caller caller;
-        private final String script;
-        private final VarScript plugin;
-        private final BukkitScheduler scheduler;
-
-        AsyncCompiler(BukkitScheduler scheduler, VarScript plugin, Workspace workspace, Caller caller, String script){
-            this.plugin = plugin;
-            this.scheduler = scheduler;
-            this.workspace = workspace;
-            this.caller = caller;
-            this.script = script;
-        }
+    private record AsyncCompiler(
+            BukkitScheduler scheduler,
+            VarScript plugin,
+            Workspace workspace,
+            Caller caller,
+            String script
+    ) implements Runnable {
 
         @Override
         public void run() {

@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
@@ -72,15 +73,15 @@ public class LocationExt {
         self.setZ(val);
     }
 
-    public static void setBl(Location self, int id){
-        getBl(self).setTypeId(id);
+    public static void setBl(Location self, String material){
+        getBl(self).setType(Material.matchMaterial(material));
     }
 
     public static void setBl(Location self, Material id){
         getBl(self).setType(id);
     }
 
-    public static void setBlock(Location self, int id){
+    public static void setBlock(Location self, String id){
         setBl(self, id);
     }
 
@@ -88,20 +89,12 @@ public class LocationExt {
         setBl(self, id);
     }
 
-    public static void bl(Location self, Material id, int data){
-        getBl(self).setTypeIdAndData(id.getId(), (byte)data, false);
+    public static void bl(Location self, Material id){
+        getBl(self).setType(id);
     }
 
-    public static void bl(Location self, int id, int data){
-        getBl(self).setTypeIdAndData(id, (byte)data, false);
-    }
-
-    public static void block(Location self, Material id, int data){
-        bl(self, id, data);
-    }
-
-    public static void block(Location self, int id, int data){
-        bl(self, id, data);
+    public static void block(Location self, Material data){
+        bl(self, data);
     }
 
     // region
@@ -190,9 +183,9 @@ public class LocationExt {
         return spawn(self, material, 0);
     }
 
-    public static FallingBlock spawn(Location self, int type, int data){
+    public static FallingBlock spawn(Location self, BlockData data){
         Location loc = getLoc(self);
-        return loc.getWorld().spawnFallingBlock(loc, type, (byte) data);
+        return loc.getWorld().spawnFallingBlock(loc, data);
     }
 
     // effect

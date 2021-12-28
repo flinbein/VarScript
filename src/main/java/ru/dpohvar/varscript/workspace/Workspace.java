@@ -32,7 +32,7 @@ public class Workspace extends GroovyObjectSupport implements TriggerGenerator {
     private final GroovyClassLoader groovyClassLoader;
     private final CompilerConfiguration compilerConfiguration;
     private final Binding binding = new Binding();
-    private final WeakHashMap<String,Class> cacheClasses = new WeakHashMap<String, Class>();
+    private final WeakHashMap<String,Class<?>> cacheClasses = new WeakHashMap<>();
 
     public Workspace(WorkspaceService workspaceService, String name) {
         this.workspaceService = workspaceService;
@@ -168,12 +168,6 @@ public class Workspace extends GroovyObjectSupport implements TriggerGenerator {
 
     public Object compileScript(Caller caller, String script, Binding binding) throws IllegalAccessException, InstantiationException {
         if (caller == null) caller = getWorkspaceService().getVarScript().getCallerService().getConsoleCaller();
-
-        CompileScriptEvent event = new CompileScriptEvent(caller, script, this);
-        workspaceService.getVarScript().getServer().getPluginManager().callEvent(event);
-        script = event.getScript();
-        if (event.isCancelled() || script == null) return null;
-
         String scriptName = caller.getSender().getName() + "@" + this.name;
         String hashString = scriptName + '\t' + script;
         Class scriptClass = cacheClasses.get(hashString);
@@ -405,7 +399,7 @@ public class Workspace extends GroovyObjectSupport implements TriggerGenerator {
     }
 
     @Override
-    public TriggerGenerator generator() {
+    public MetaTriggerGenerator generator() {
         return new TriggerContainer(this, this, triggers);
     }
 

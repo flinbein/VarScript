@@ -46,8 +46,8 @@ public class InventoryHolderExt {
         return self;
     }
 
-    public static <T extends InventoryHolder> T give(T self, int mat) {
-        self.getInventory().addItem(new ItemStack(mat));
+    public static <T extends InventoryHolder> T give(T self, String mat) {
+        self.getInventory().addItem(new ItemStack(Material.matchMaterial(mat)));
         return self;
     }
 
@@ -56,8 +56,8 @@ public class InventoryHolderExt {
         return self;
     }
 
-    public static <T extends InventoryHolder> T give(T self, int mat, int amount, int data) {
-        self.getInventory().addItem(new ItemStack(mat, amount, (short)data));
+    public static <T extends InventoryHolder> T give(T self, String mat, int amount, int data) {
+        self.getInventory().addItem(new ItemStack(Material.matchMaterial(mat), amount, (short)data));
         return self;
     }
 

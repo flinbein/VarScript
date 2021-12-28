@@ -1,21 +1,8 @@
 package ru.dpohvar.varscript.extension;
 
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Vector;
-import ru.dpohvar.varscript.extension.region.BoxArea;
-import ru.dpohvar.varscript.extension.region.BoxRegion;
-import ru.dpohvar.varscript.extension.region.SphereArea;
-import ru.dpohvar.varscript.extension.region.SphereRegion;
-
-import java.util.Iterator;
-import java.util.List;
 
 public class CharSequenceExt {
 

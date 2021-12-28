@@ -9,7 +9,7 @@ import ru.dpohvar.varscript.workspace.Workspace;
 
 public class CompileScriptEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final Caller caller;
+    private Caller caller;
     private boolean cancelled;
     private Workspace workspace;
     private String script;
@@ -24,8 +24,16 @@ public class CompileScriptEvent extends Event implements Cancellable {
         return caller;
     }
 
+    public void setCaller(Caller caller) {
+        this.caller = caller;
+    }
+
     public Workspace getWorkspace() {
         return workspace;
+    }
+
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
     }
 
     public String getScript() {

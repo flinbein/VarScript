@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -81,36 +82,28 @@ public class EntityExt {
 
     // setters
 
-    public static void setBl(Entity self, int id){
-        getBl(self).setTypeId(id);
+    public static void setBl(Entity self, String material){
+        getBl(self).setType(Material.matchMaterial(material));
     }
 
     public static void setBl(Entity self, Material id){
         getBl(self).setType(id);
     }
 
-    public static void setBlock(Entity self, int id){
-        setBl(self, id);
+    public static void setBlock(Entity self, String material){
+        setBl(self, material);
     }
 
     public static void setBlock(Entity self, Material id){
         setBl(self, id);
     }
 
-    public static void bl(Entity self, Material id, int data){
-        getBl(self).setTypeIdAndData(id.getId(), (byte)data, false);
+    public static void bl(Entity self, BlockData blockData){
+        getBl(self).setBlockData(blockData);
     }
 
-    public static void bl(Entity self, int id, int data){
-        getBl(self).setTypeIdAndData(id, (byte)data, false);
-    }
-
-    public static void block(Entity self, Material id, int data){
-        bl(self, id, data);
-    }
-
-    public static void block(Entity self, int id, int data){
-        bl(self, id, data);
+    public static void block(Entity self, BlockData blockData){
+        bl(self, blockData);
     }
 
     // region
@@ -195,13 +188,13 @@ public class EntityExt {
         return loc.getWorld().spawnFallingBlock(loc, material, (byte) data);
     }
 
-    public static FallingBlock spawn(Entity self, Material material){
-        return spawn(self, material, 0);
+    public static FallingBlock spawn(Entity self, BlockData data){
+        Location loc = getLoc(self);
+        return loc.getWorld().spawnFallingBlock(loc, data);
     }
 
-    public static FallingBlock spawn(Entity self, int type, int data){
-        Location loc = getLoc(self);
-        return loc.getWorld().spawnFallingBlock(loc, type, (byte) data);
+    public static FallingBlock spawn(Entity self, Material material){
+        return spawn(self, material, 0);
     }
 
     // effect
@@ -454,17 +447,24 @@ public class EntityExt {
         self.setFallDistance(dist);
     }
 
-    public static Entity getPas(Entity self){
-        return self.getPassenger();
+    public static List<Entity> getPas(Entity self){
+        return self.getPassengers();
     }
 
     public static void setPas(Entity self, Entity passenger){
-        self.setPassenger(passenger);
+        self.addPassenger(passenger);
     }
 
     public static <T extends Entity> T xor(Entity self, T passenger){
-        self.setPassenger(passenger);
+        self.addPassenger(passenger);
         return passenger;
+    }
+
+    public static <T extends List<Entity>> T xor(Entity self, T passengers){
+        for (Entity passenger : passengers) {
+            self.addPassenger(passenger);
+        }
+        return passengers;
     }
 
     public static void pas(Entity self, Entity passenger){
