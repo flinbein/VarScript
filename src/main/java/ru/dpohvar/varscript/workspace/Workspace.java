@@ -44,7 +44,7 @@ public class Workspace extends GroovyObjectSupport implements TriggerGenerator {
         compilerConfiguration.setScriptBaseClass(CallerScript.class.getName());
         List<CompilationCustomizer> compilationCustomizers = compilerConfiguration.getCompilationCustomizers();
         compilerConfiguration.getClasspath().addAll(workspaceService.getClassPath());
-        String encoding = workspaceService.getVarScript().getConfig().getString("sources.encoding");
+        String encoding = workspaceService.getVarScript().getConfig().getString("workspace-sources.encoding");
         if (encoding != null) compilerConfiguration.setSourceEncoding(encoding);
         compilationCustomizers.addAll(workspaceService.getCompilationCustomizers());
         groovyClassLoader = new GroovyClassLoader(workspaceService.getGroovyClassLoader(), compilerConfiguration);

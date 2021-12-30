@@ -2,6 +2,8 @@ package ru.dpohvar.varscript.workspace;
 
 import groovy.lang.*;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.CommandBlock;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -73,13 +75,13 @@ public class WorkspaceService extends GroovyObjectSupport {
     }
 
     public WorkspaceService(VarScript varscript){
-        VarScriptClassLoader libLoader = VarScript.libLoader;
         this.varscript = varscript;
+        VarScriptClassLoader libLoader = VarScript.libLoader;
         FileConfiguration config = varscript.getConfig();
-        this.autorunDirectory = new File(config.getString("sources.autorun"));
-        this.scriptsDirectory = new File(config.getString("sources.scripts"));
-        this.classesDirectory = new File(config.getString("sources.classes"));
-        this.serviceDirectory = new File(config.getString("sources.services"));
+        this.autorunDirectory = getRelativeDirInConfig("workspace-sources.autorun");
+        this.scriptsDirectory = getRelativeDirInConfig("workspace-sources.scripts");
+        this.classesDirectory = getRelativeDirInConfig("workspace-sources.classes");
+        this.serviceDirectory = getRelativeDirInConfig("workspace-sources.services");
         ImportCustomizer importCustomizer = new ImportCustomizer();
         compilationCustomizers.add(importCustomizer);
         for (Map<?, ?> anImport : config.getMapList("import")) {
@@ -126,6 +128,12 @@ public class WorkspaceService extends GroovyObjectSupport {
         if (encoding != null) compilerConfiguration.setSourceEncoding(encoding);
         groovyClassLoader = new GroovyClassLoader(VarScript.libLoader, compilerConfiguration);
         VarScript.libLoader.monitorFolder(groovyClassLoader, serviceDirectory);
+    }
+
+    File getRelativeDirInConfig(String configPath){
+        var configValue = varscript.getConfig().getString(configPath);
+        if (configValue.startsWith("/")) return new File(configValue);
+        return new File(this.varscript.getDataFolder(), configValue);
     }
 
     public CompilerConfiguration getCompilerConfiguration() {
@@ -205,9 +213,15 @@ public class WorkspaceService extends GroovyObjectSupport {
 
     public String getWorkspaceName(CommandSender sender){
         FileConfiguration config = varscript.getConfig();
-        String workspaceName = config.getString("workspace." + sender.getName());
+        var name = sender.getName();
+        if (sender instanceof BlockCommandSender bs) {
+            CommandBlock state = (CommandBlock) bs.getBlock().getState();
+            name = state.getName();
+            return name;
+        }
+        String workspaceName = config.getString("workspace." + name);
         if (workspaceName != null) return workspaceName;
-        else return sender.getName();
+        else return name;
     }
 
     public void setWorkspaceName(CommandSender sender, String workspaceName){

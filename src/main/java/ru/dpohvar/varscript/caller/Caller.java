@@ -46,8 +46,8 @@ public class Caller {
     public void sendPrintMessage(CharSequence message, String source){
         if (source == null) source = "";
         String prefix = String.format(VarScript.printPrefix, source);
-        if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(prefix + message);
+        if (sender instanceof Conversable cons && cons.isConversing()) {
+            cons.sendRawMessage(prefix + message);
         } else {
             sender.sendMessage(prefix + message);
         }
@@ -56,8 +56,8 @@ public class Caller {
     public void sendMessage(CharSequence message, String source){
         if (source == null) source = "";
         String prefix = String.format(VarScript.prefix, source);
-        if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(prefix + message);
+        if (sender instanceof Conversable cons && cons.isConversing()) {
+            cons.sendRawMessage(prefix + message);
         } else {
             sender.sendMessage(prefix + message);
         }
@@ -66,8 +66,8 @@ public class Caller {
     public void sendErrorMessage(CharSequence message, String source){
         if (source == null) source = "";
         String prefix = String.format(VarScript.errorPrefix, source);
-        if (sender instanceof Conversable && ((Conversable) sender).isConversing()) {
-            ((Conversable) sender).sendRawMessage(prefix + message);
+        if (sender instanceof Conversable cons && cons.isConversing()) {
+            cons.sendRawMessage(prefix + message);
         } else {
             sender.sendMessage(prefix + message);
         }

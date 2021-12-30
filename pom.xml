@@ -32,7 +32,7 @@
 
     <groupId>ru.dpohvar.varscript</groupId>
     <artifactId>varscript</artifactId>
-    <version>1.4</version>
+    <version>1.4.1</version>
     <packaging>jar</packaging>
 
     <description>Powerful Scripting Plugin</description>

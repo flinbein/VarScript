@@ -1,8 +1,8 @@
-sources:
-  autorun: plugins/${project.artifactId}/autorun
-  scripts: plugins/${project.artifactId}/scripts
-  classes: plugins/${project.artifactId}/scripts
-  services: plugins/${project.artifactId}/autorun
+workspace-sources:
+  autorun: autorun
+  scripts: scripts
+  classes: scripts
+  services: autorun
   encoding: UTF-8
 import:
 - scan-package: org.bukkit
@@ -19,9 +19,11 @@ import:
 - scan-package: org.bukkit.projectiles
 - scan-package: org.bukkit.scoreboard
 - scan-package: org.bukkit.potion
+- scan-package: org.bukkit.generator
 - class: org.bukkit.util.Vector
 - class: org.bukkit.util.BlockVector
 - class: org.bukkit.util.EulerAngle
 - class: org.bukkit.event.EventPriority
 - class: org.bukkit.util.EulerAngle
+- class: org.bukkit.loot.LootTables
 - class: org.bukkit.material.MaterialData

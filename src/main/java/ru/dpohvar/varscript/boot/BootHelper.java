@@ -11,6 +11,7 @@ import ru.dpohvar.varscript.VarScript;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -65,39 +66,48 @@ public class BootHelper {
     public static ArrayList<String> getClassNamesFromPackage(String packageName, boolean recursive) {
         ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
         ArrayList<String> names = new ArrayList<String>();
-        URL packageURL = null;
         packageName = packageName.replace('.','/');
         if (!packageName.endsWith("/")) packageName += '/';
 
-        ClassLoader packageClassLoader = resourceClassLoader;
+        var urlList = new LinkedList<URL>();
 
-        while (packageURL == null && packageClassLoader != null) {
-            packageURL = packageClassLoader.getResource(packageName);
-            packageClassLoader = packageClassLoader.getParent();
+        var packageClassLoader = resourceClassLoader;
+        try {
+            while (packageClassLoader != null) {
+                var resources = packageClassLoader.getResources(packageName);
+                resources.asIterator().forEachRemaining(urlList::add);
+                packageClassLoader = packageClassLoader.getParent();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        if( packageURL != null && packageURL.getProtocol().equals("jar")) try {
-            // build jar file name, then loop through zipped entries
-            String jarFileName = URLDecoder.decode(packageURL.getFile(), "UTF-8");
-            jarFileName = jarFileName.substring(5,jarFileName.indexOf("!"));
-            JarFile jf = new JarFile(jarFileName);
-            Enumeration<JarEntry> jarEntries = jf.entries();
-            while (jarEntries.hasMoreElements()){
-                JarEntry entry = jarEntries.nextElement();
-                if (entry.isDirectory()) continue;
-                String entryName = entry.getName();
-                if (!entryName.startsWith(packageName)) continue;
-                if (!entryName.endsWith(".class")) continue;
-                if (entryName.contains("$")) continue;
-                if (!recursive) {
-                    String end = entryName.substring(packageName.length());
-                    if (end.contains("/")) continue;
+
+        for (URL packageURL : urlList) {
+            if(packageURL.getProtocol().equals("jar")) try {
+                // build jar file name, then loop through zipped entries
+                String jarFileName = URLDecoder.decode(packageURL.getFile(), StandardCharsets.UTF_8);
+                jarFileName = jarFileName.substring(5,jarFileName.indexOf("!"));
+                JarFile jf = new JarFile(jarFileName);
+                Enumeration<JarEntry> jarEntries = jf.entries();
+                while (jarEntries.hasMoreElements()){
+                    JarEntry entry = jarEntries.nextElement();
+                    if (entry.isDirectory()) continue;
+                    String entryName = entry.getName();
+                    if (!entryName.startsWith(packageName)) continue;
+                    if (!entryName.endsWith(".class")) continue;
+                    if (entryName.contains("$")) continue;
+                    if (!recursive) {
+                        String end = entryName.substring(packageName.length());
+                        if (end.contains("/")) continue;
+                    }
+                    String name = entryName.substring(0,entryName.length()-6);
+                    String className = name.replace('/','.');
+                    names.add(className);
                 }
-                String name = entryName.substring(0,entryName.length()-6);
-                String className = name.replace('/','.');
-                names.add(className);
-            }
-        } catch (IOException ignored) {}
+            } catch (IOException ignored) {}
+
+        }
         return names;
     }
 
