@@ -15,7 +15,12 @@ import ru.dpohvar.varscript.workspace.Workspace;
 import ru.dpohvar.varscript.workspace.WorkspaceService;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ServiceLoader;
+import java.util.jar.JarFile;
 
 import static org.bukkit.ChatColor.translateAlternateColorCodes;
 
@@ -33,9 +38,15 @@ public class VarScript extends JavaPlugin {
     static {
         pluginName = "VarScript";
         pluginsFolder = new File("plugins");
-        dataFolder = new File(pluginsFolder, pluginName);
+
+        URL resPluginYml = VarScript.class.getClassLoader().getResource("plugin.yml");
+        String jarFileName = URLDecoder.decode(resPluginYml.getFile(), StandardCharsets.UTF_8);
+        String pluginJarDir = jarFileName.substring(5,jarFileName.indexOf("!"));
+        var pluginFolderDir = pluginJarDir.substring(0, pluginJarDir.length() - 4);
+        dataFolder = new File(pluginFolderDir);
         libLoader = new VarScriptClassLoader(VarScript.class.getClassLoader(), Bukkit.getPluginManager());
         ExpandoMetaClassCreationHandle.enable();
+        BootHelper.loadLibraries(libLoader);
         BootHelper.loadExtensions(VarScript.class.getClassLoader());
     }
 

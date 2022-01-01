@@ -7,6 +7,7 @@ import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry;
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.FastArray;
+import org.yaml.snakeyaml.Yaml;
 import ru.dpohvar.varscript.VarScript;
 
 import java.io.*;
@@ -111,5 +112,86 @@ public class BootHelper {
         return names;
     }
 
+    private static final Yaml yaml = new Yaml();
+
+    public static void loadLibraries(VarScriptClassLoader libLoader){
+        ClassLoader resourceClassLoader = VarScript.class.getClassLoader();
+        File configFile = new File(VarScript.dataFolder, "config.yml");
+        Map<?,?> config = null;
+        if (configFile.isFile()) config = readYaml(configFile);
+        Object librariesValue = null;
+        if (config != null) librariesValue = config.get("libraries");
+        if (librariesValue == null) {
+            config = readYaml(resourceClassLoader.getResource("config.yml"));
+            librariesValue = config.get("libraries");
+        }
+        try {
+            if (librariesValue instanceof String libPath && !libPath.isEmpty()) {
+                File librariesFolder = getRelativeDir(libPath);
+                if (!librariesFolder.exists()) librariesFolder.mkdirs();
+                if (!librariesFolder.isDirectory()) return;
+                libLoader.addURL(librariesFolder.toURI().toURL());
+
+                File[] files = librariesFolder.listFiles();
+                if (files != null) for (File file : files) {
+                    if (file.getName().toLowerCase().endsWith(".jar")) {
+                        libLoader.addURL(file.toURI().toURL());
+                    }
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Read yaml map from url
+     *
+     * @param url url
+     * @return parsed map
+     */
+    private static Map<?,?> readYaml(URL url){
+        InputStream is = null;
+        try{
+            is = url.openStream();
+            Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
+            return yaml.load(reader);
+        } catch (Exception e) {
+            throw new RuntimeException("Can not load yaml: "+url,e);
+        } finally {
+            if (is != null) try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Read yaml map from file
+     * @param file file
+     * @return parsed map
+     */
+    private static Map<?,?> readYaml(File file){
+        InputStream is = null;
+        try{
+            is = new FileInputStream(file);
+            Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
+            return yaml.load(reader);
+        } catch (Exception e) {
+            throw new RuntimeException("Can not load yaml: "+file, e);
+        } finally {
+            if (is != null) try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static File getRelativeDir(String path){
+        if (path.startsWith("/")) return new File(path);
+        return new File(VarScript.dataFolder, path);
+    }
 
 }

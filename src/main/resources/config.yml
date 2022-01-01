@@ -4,6 +4,7 @@ workspace-sources:
   classes: scripts
   services: autorun
   encoding: UTF-8
+libraries: lib
 import:
 - scan-package: org.bukkit
 - scan-package: org.bukkit.block
